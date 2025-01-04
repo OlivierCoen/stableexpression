@@ -50,7 +50,7 @@ workflow EXPRESSIONATLAS_FETCHDATA {
                             .map { it -> it.trim() }
                             .filter { it.startsWith('E-') && !it.startsWith('E-PROT-') }
     }
-    ch_accessions.view()
+
     //
     // MODULE: Expression Atlas - Get data
     //
