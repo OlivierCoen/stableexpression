@@ -28,6 +28,8 @@ process MERGE_COUNTS {
 
     input:
     path count_files, stageAs: "?/*"
+    val(filter_out_zero_counts)
+    val(get_means)
 
     output:
     path 'all_counts.parquet',                                                                                        emit: counts
@@ -36,8 +38,10 @@ process MERGE_COUNTS {
 
 
     script:
+    def filter_out_zero_counts_arg = filter_out_zero_counts ? "--filter-out-zero-counts" : ""
+    def get_means_arg = get_means ? "--get-means" : ""
     """
-    merge_counts.py --counts "$count_files"
+    merge_counts.py --counts "$count_files" $filter_out_zero_counts_arg $get_means_arg
     """
 
 }

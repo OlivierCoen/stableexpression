@@ -8,9 +8,8 @@ nextflow.preview.topic = true
 
 include { EXPRESSIONATLAS_FETCHDATA              } from '../subworkflows/local/expressionatlas_fetchdata/main'
 include { PAIRWISE_GENE_VARIATION                } from '../subworkflows/local/pairwise_gene_variation/main.nf'
+include { EXPRESSIONATLAS_NORMALISATION          } from '../subworkflows/local/expression_normalisation/main.nf'
 
-include { DESEQ2_NORMALISE                       } from '../modules/local/deseq2/normalise/main'
-include { EDGER_NORMALISE                        } from '../modules/local/edger/normalise/main'
 include { GPROFILER_IDMAPPING                    } from '../modules/local/gprofiler/idmapping/main'
 include { MERGE_COUNTS                           } from '../modules/local/merge_counts/main'
 include { GENE_STATISTICS                        } from '../modules/local/gene_statistics/main'
@@ -54,25 +53,14 @@ workflow STABLEEXPRESSION {
     )
 
     // putting all normalized and raw datasets together (local datasets + Expression Atlas datasets)
-    ch_normalised_datasets = ch_normalised_datasets.concat( EXPRESSIONATLAS_FETCHDATA.out.microarray_normalised )
-    ch_raw_datasets = ch_raw_datasets.concat( EXPRESSIONATLAS_FETCHDATA.out.rnaseq_raw )
+    ch_normalised_datasets = ch_normalised_datasets
+                                .concat( EXPRESSIONATLAS_FETCHDATA.out.microarray_normalised )
+                                .map { it -> [normalised: true, file: it }
+    ch_raw_datasets = ch_raw_datasets
+                        .concat( EXPRESSIONATLAS_FETCHDATA.out.rnaseq_raw )
+                        .map { it -> [normalised: false, file: it }
 
-    //
-    // MODULE: normalisation of raw count datasets (including RNA-seq datasets)
-    //
-
-    if ( params.normalisation_method == 'deseq2' ) {
-        DESEQ2_NORMALISE( ch_raw_datasets )
-        ch_raw_datasets_normalised = DESEQ2_NORMALISE.out.cpm
-
-    } else { // 'edger'
-        EDGER_NORMALISE( ch_raw_datasets )
-        ch_raw_datasets_normalised = EDGER_NORMALISE.out.cpm
-    }
-
-    // putting all normalised count datasets together
-    ch_all_normalised_counts = ch_normalised_datasets.concat( ch_raw_datasets_normalised )
-
+    ch_datasets = ch_normalised_datasets.concat( ch_raw_datasets )
 
     //
     // MODULE: ID Mapping
@@ -94,26 +82,30 @@ workflow STABLEEXPRESSION {
     } else {
         // tries to map gene IDs to Ensembl IDs whenever possible
         GPROFILER_IDMAPPING(
-            ch_all_normalised_counts.combine( ch_species ),
+            ch_datasets.combine( ch_species ),
             params.gene_id_mapping ? Channel.fromPath( params.gene_id_mapping, checkIfExists: true ) : 'none'
         )
-        ch_all_normalised_counts = GPROFILER_IDMAPPING.out.renamed
+        ch_datasets_renamed = GPROFILER_IDMAPPING.out.renamed
         ch_gene_metadata = ch_gene_metadata.mix( GPROFILER_IDMAPPING.out.metadata )
         // the gene id mappings are the sum
         // of those provided by the user and those fetched from g:Profiler
         ch_gene_id_mapping = GPROFILER_IDMAPPING.out.mapping
     }
 
-
     //
-    // MODULE: Merge count files
+    // SURBWORKFLOW: normalisation of raw count datasets (including RNA-seq datasets)
     //
-    ch_all_normalised_counts
-                    .map { meta, file -> [file] }
-                    .collect()
-                    | MERGE_COUNTS
 
-    ch_merged_counts = MERGE_COUNTS.out.counts
+    EXPRESSIONATLAS_NORMALISATION(ch_datasets_renamed)
+
+
+    ch_all_normalised_counts = EXPRESSIONATLAS_NORMALISATION.out.all_normalised_counts
+
+
+
+
+
+
 
     //
     // STEP: Calculate gene variation
