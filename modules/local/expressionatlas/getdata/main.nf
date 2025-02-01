@@ -30,9 +30,9 @@ process EXPRESSIONATLAS_GETDATA {
     val(accession)
 
     output:
-    path "*.design.csv",                                                                                         emit: design
-    path "*.raw.csv",                   optional: true,                                                          emit: raw
-    path "*.normalised.csv",            optional: true,                                                          emit: normalised
+    path "*.design.csv",                                                                                                                emit: design
+    path "*.rnaseq.raw.csv",                   optional: true,                                                                          emit: rnaseq_raw
+    path "*.microarray.normalised.csv",        optional: true,                                                                          emit: microarray_normalised
     tuple val("${task.process}"), val('R'),               eval('Rscript -e "cat(R.version.string)" | sed "s/R version //"'),            topic: versions
     tuple val("${task.process}"), val('ExpressionAtlas'), eval('Rscript -e "cat(as.character(packageVersion(\'ExpressionAtlas\')))"'),  topic: versions
 

@@ -54,8 +54,8 @@ workflow STABLEEXPRESSION {
     )
 
     // putting all normalized and raw datasets together (local datasets + Expression Atlas datasets)
-    ch_normalised_datasets = ch_normalised_datasets.concat( EXPRESSIONATLAS_FETCHDATA.out.normalised )
-    ch_raw_datasets = ch_raw_datasets.concat( EXPRESSIONATLAS_FETCHDATA.out.raw )
+    ch_normalised_datasets = ch_normalised_datasets.concat( EXPRESSIONATLAS_FETCHDATA.out.microarray_normalised )
+    ch_raw_datasets = ch_raw_datasets.concat( EXPRESSIONATLAS_FETCHDATA.out.rnaseq_raw )
 
     //
     // MODULE: normalisation of raw count datasets (including RNA-seq datasets)

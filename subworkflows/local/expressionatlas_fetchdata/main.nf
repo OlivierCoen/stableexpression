@@ -60,23 +60,23 @@ workflow EXPRESSIONATLAS_FETCHDATA {
 
     // adding dataset id (accession + data_type) in the file meta
     ch_etlas_output_design = augmentWithDatasetId( EXPRESSIONATLAS_GETDATA.out.design.flatten() )
-    ch_eatlas_normalised_output = augmentWithDatasetId( EXPRESSIONATLAS_GETDATA.out.normalised.flatten() )
-    ch_eatlas_raw_output = augmentWithDatasetId( EXPRESSIONATLAS_GETDATA.out.raw.flatten() )
+    ch_eatlas_microarray_normalised_output = augmentWithDatasetId( EXPRESSIONATLAS_GETDATA.out.microarray_normalised.flatten() )
+    ch_eatlas_rnaseq_raw_output = augmentWithDatasetId( EXPRESSIONATLAS_GETDATA.out.rnaseq_raw.flatten() )
 
     // adding design files to the meta their respective count files
-    normalised = groupFilesByDatasetId(
+    ch_microarray_normalised = groupFilesByDatasetId(
         ch_etlas_output_design,
-        ch_eatlas_normalised_output
+        ch_eatlas_microarray_normalised_output
     )
 
-    raw = groupFilesByDatasetId(
+    ch_rnaseq_raw = groupFilesByDatasetId(
         ch_etlas_output_design,
-        ch_eatlas_raw_output
+        ch_eatlas_rnaseq_raw_output
     )
 
     emit:
-    normalised
-    raw
+    microarray_normalised = ch_microarray_normalised
+    rnaseq_raw = ch_rnaseq_raw
 }
 
 
