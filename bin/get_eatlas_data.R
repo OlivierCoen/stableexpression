@@ -89,7 +89,8 @@ get_rnaseq_data <- function(data) {
 
     return(list(
         count_data = assays( data )$counts,
-        count_type = 'raw',
+        platform = 'rnaseq',
+        count_type = 'raw', # rnaseq data are raw in ExpressionAtlas
         sample_groups = colData(data)$AtlasAssayGroup
         ))
 }
@@ -98,7 +99,8 @@ get_one_colour_microarray_data <- function(data) {
 
     return(list(
         count_data = exprs( data ),
-        count_type = 'normalised',
+        platform = 'microarray',
+        count_type = 'normalised', # one colour microarray data are already normalised in ExpressionAtlas
         sample_groups = phenoData(data)$AtlasAssayGroup
     ))
 }
@@ -120,7 +122,7 @@ export_count_data <- function(result, batch_id) {
     # renaming columns, to make them specific to accession and data type
     colnames(result$count_data) <- get_new_sample_names(result, batch_id)
 
-    outfilename <- paste0(batch_id, '.', result$count_type, '.csv')
+    outfilename <- paste0(batch_id, '.', result$platform, '.', result$count_type, '.csv')
 
     # exporting to CSV file
     # index represents gene names
