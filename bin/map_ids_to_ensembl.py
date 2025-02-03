@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 # CONSTANTS
 ##################################################################
 
-RENAMED_FILE_SUFFIX = "_renamed.csv"
-METADATA_FILE_SUFFIX = "_metadata.csv"
-MAPPING_FILE_SUFFIX = "_mapping.csv"
+RENAMED_FILE_SUFFIX = ".renamed.csv"
+METADATA_FILE_SUFFIX = ".metadata.csv"
+MAPPING_FILE_SUFFIX = ".mapping.csv"
 
 CHUNKSIZE = 2000  # number of IDs to convert at a time - may create trouble if > 2000
 

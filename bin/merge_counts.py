@@ -13,10 +13,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 ALL_COUNTS_PARQUET_OUTFILENAME = "all_counts.parquet"
-COUNT_MEANS_PARQUET_OUTFILENAME = "count_means.parquet"
 
 ENSEMBL_GENE_ID_COLNAME = "ensembl_gene_id"
-MEAN_COLNAME = "mean"
 
 
 #####################################################
@@ -28,28 +26,16 @@ MEAN_COLNAME = "mean"
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Merge count files into a single parquet file"
+        description="Get variation from count data for each gene"
     )
     parser.add_argument(
         "--counts", type=str, dest="count_files", required=True, help="Count files"
-    )
-    parser.add_argument(
-        "--filter-out-zero-counts",
-        dest="filter_out_zero_counts",
-        action="store_true",
-        help="Filter out genes showing a zero count in at least one sample",
-    )
-    parser.add_argument(
-        "--get-means",
-        dest="get_means",
-        action="store_true",
-        help="Get means from count data for each gene",
     )
     return parser.parse_args()
 
 
 def parse_count_file(count_file: Path) -> pl.LazyFrame:
-    lf = pl.scan_csv(count_file)
+    lf = pl.scan_parquet(count_file)
     # in some cases, the first column may have an empty name or be different than ENSEMBL_GENE_ID_COLNAME
     # in any case, this column must have the ENSEMBL_GENE_ID_COLNAME name
     first_column_name = lf.collect_schema().names()[0]
@@ -132,40 +118,14 @@ def get_counts(files: list[Path]) -> pl.LazyFrame:
     )
 
 
-def filter_out_genes_not_always_present(count_lf: pl.LazyFrame):
-    filtered_count_lf = count_lf.filter(
-        pl.concat_list(pl.exclude(ENSEMBL_GENE_ID_COLNAME)).list.min() > 0
-    )
-    # checking if filtered count dataframe is empty
-    if filtered_count_lf.limit(1).collect().is_empty():
-        logger.error("No gene left after filtering for expression > 0 in all samples")
-        sys.exit(101)
-
-    return filtered_count_lf
-
-
 def get_nb_rows(lf: pl.LazyFrame):
     return lf.select(pl.len()).collect().item()
-
-
-def compute_means(lf: pl.LazyFrame) -> pl.LazyFrame:
-    return lf.select(
-        pl.col(ENSEMBL_GENE_ID_COLNAME),
-        pl.concat_list(pl.exclude(ENSEMBL_GENE_ID_COLNAME))
-        .list.mean()
-        .alias(MEAN_COLNAME),
-    )
 
 
 def export_count_data(filtered_count_lf: pl.LazyFrame):
     """Export gene expression data to CSV files."""
     logger.info(f"Exporting normalised counts to: {ALL_COUNTS_PARQUET_OUTFILENAME}")
     filtered_count_lf.collect().write_parquet(ALL_COUNTS_PARQUET_OUTFILENAME)
-
-
-def export_count_means(count_means_lf: pl.LazyFrame):
-    logger.info(f"Exporting means to: {COUNT_MEANS_PARQUET_OUTFILENAME}")
-    count_means_lf.collect().write_parquet(COUNT_MEANS_PARQUET_OUTFILENAME)
 
 
 #####################################################
@@ -182,20 +142,7 @@ def main():
     # putting all counts into a single dataframe
     count_lf = get_counts(count_files)
 
-    if args.filter_out_zero_counts:
-        nb_genes = get_nb_rows(count_lf)
-        logger.info("Filtering out genes showing a zero count in at least one sample")
-        count_lf = filter_out_genes_not_always_present(count_lf)
-        nb_genes_left = get_nb_rows(count_lf)
-        logger.info(
-            f"Kept {nb_genes_left} genes ({100 * nb_genes_left / nb_genes:.2f}%) after filtering"
-        )
-
-    if args.get_means:
-        count_means_lf = compute_means(count_lf)
-        export_count_means(count_means_lf)
-    else:
-        export_count_data(count_lf)
+    export_count_data(count_lf)
 
 
 if __name__ == "__main__":

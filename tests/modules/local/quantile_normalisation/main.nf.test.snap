@@ -1,0 +1,50 @@
+{
+    "Should run without failures": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "dataset": "test"
+                        },
+                        "count.raw.cpm.quant_norm.parquet:md5,21970d44bc6c08742ea41cee57065d69"
+                    ]
+                ],
+                "1": [
+                    [
+                        "QUANTILE_NORMALISE",
+                        "python",
+                        "3.12.8"
+                    ]
+                ],
+                "2": [
+                    [
+                        "QUANTILE_NORMALISE",
+                        "pandas",
+                        "2.2.3"
+                    ]
+                ],
+                "3": [
+                    [
+                        "QUANTILE_NORMALISE",
+                        "scikit-learn",
+                        "1.6.1"
+                    ]
+                ],
+                "counts": [
+                    [
+                        {
+                            "dataset": "test"
+                        },
+                        "count.raw.cpm.quant_norm.parquet:md5,21970d44bc6c08742ea41cee57065d69"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.3"
+        },
+        "timestamp": "2025-02-02T20:09:04.40640849"
+    }
+}

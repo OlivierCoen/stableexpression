@@ -1,7 +1,6 @@
 process GPROFILER_IDMAPPING {
 
     label 'process_low'
-    debug true
 
     publishDir "${params.outdir}/idmapping"
 
@@ -35,9 +34,9 @@ process GPROFILER_IDMAPPING {
     val gene_id_mapping_file
 
     output:
-    tuple val(meta), path('*_renamed.csv'),                                                                           emit: renamed
-    path('*_metadata.csv'), optional: true,                                                                           emit: metadata
-    path('*_mapping.csv'),  optional: true,                                                                           emit: mapping
+    tuple val(meta), path('*.renamed.csv'),                                                                           emit: renamed
+    path('*.metadata.csv'), optional: true,                                                                           emit: metadata
+    path('*.mapping.csv'),  optional: true,                                                                           emit: mapping
     tuple val("${task.process}"), val('python'),   eval("python3 --version | sed 's/Python //'"),                     topic: versions
     tuple val("${task.process}"), val('pandas'),   eval('python3 -c "import pandas; print(pandas.__version__)"'),     topic: versions
     tuple val("${task.process}"), val('requests'), eval('python3 -c "import requests; print(requests.__version__)"'), topic: versions

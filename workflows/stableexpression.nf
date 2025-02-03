@@ -8,7 +8,7 @@ nextflow.preview.topic = true
 
 include { EXPRESSIONATLAS_FETCHDATA              } from '../subworkflows/local/expressionatlas_fetchdata/main'
 include { PAIRWISE_GENE_VARIATION                } from '../subworkflows/local/pairwise_gene_variation/main.nf'
-include { EXPRESSIONATLAS_NORMALISATION          } from '../subworkflows/local/expression_normalisation/main.nf'
+include { EXPRESSION_NORMALISATION               } from '../subworkflows/local/expression_normalisation/main.nf'
 
 include { GPROFILER_IDMAPPING                    } from '../modules/local/gprofiler/idmapping/main'
 include { MERGE_COUNTS                           } from '../modules/local/merge_counts/main'
@@ -36,9 +36,7 @@ workflow STABLEEXPRESSION {
 
 
     main:
-
     ch_multiqc_files = Channel.empty()
-
     ch_species = Channel.value( params.species.split(' ').join('_') )
 
     //
@@ -55,10 +53,19 @@ workflow STABLEEXPRESSION {
     // putting all normalized and raw datasets together (local datasets + Expression Atlas datasets)
     ch_normalised_datasets = ch_normalised_datasets
                                 .concat( EXPRESSIONATLAS_FETCHDATA.out.microarray_normalised )
-                                .map { it -> [normalised: true, file: it }
+                                .map {
+                                    meta, file ->
+                                        def new_meta = meta + [normalised: true]
+                                        [new_meta, file]
+                                }
+
     ch_raw_datasets = ch_raw_datasets
                         .concat( EXPRESSIONATLAS_FETCHDATA.out.rnaseq_raw )
-                        .map { it -> [normalised: false, file: it }
+                        .map {
+                            meta, file ->
+                                def new_meta = meta + [normalised: false]
+                                [new_meta, file]
+                        }
 
     ch_datasets = ch_normalised_datasets.concat( ch_raw_datasets )
 
@@ -85,7 +92,7 @@ workflow STABLEEXPRESSION {
             ch_datasets.combine( ch_species ),
             params.gene_id_mapping ? Channel.fromPath( params.gene_id_mapping, checkIfExists: true ) : 'none'
         )
-        ch_datasets_renamed = GPROFILER_IDMAPPING.out.renamed
+        ch_datasets = GPROFILER_IDMAPPING.out.renamed
         ch_gene_metadata = ch_gene_metadata.mix( GPROFILER_IDMAPPING.out.metadata )
         // the gene id mappings are the sum
         // of those provided by the user and those fetched from g:Profiler
@@ -96,16 +103,21 @@ workflow STABLEEXPRESSION {
     // SURBWORKFLOW: normalisation of raw count datasets (including RNA-seq datasets)
     //
 
-    EXPRESSIONATLAS_NORMALISATION(ch_datasets_renamed)
+    EXPRESSION_NORMALISATION(
+        ch_datasets,
+        params.normalisation_method
+    )
 
+    //
+    // MODULE: Merge count files and filter out zero counts
+    //
 
-    ch_all_normalised_counts = EXPRESSIONATLAS_NORMALISATION.out.all_normalised_counts
+    EXPRESSION_NORMALISATION.out.normalised_counts
+                                    .map { meta, file -> [file] }
+                                    .collect()
+                                    | MERGE_COUNTS
 
-
-
-
-
-
+    ch_merged_counts = MERGE_COUNTS.out.counts
 
     //
     // STEP: Calculate gene variation
@@ -123,7 +135,6 @@ workflow STABLEEXPRESSION {
         }
 
     }
-
 
     //
     // MODULE: Gene statistics
@@ -204,7 +215,7 @@ workflow STABLEEXPRESSION {
         top_stable_genes_summary = ch_top_stable_genes_summary
         log_counts = ch_log_counts
         top_stable_genes_log_counts = ch_top_stable_genes_log_counts
-        multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+        multiqc_report = MULTIQC.out.report.toList()
 
 }
 

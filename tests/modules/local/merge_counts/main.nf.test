@@ -26,23 +26,4 @@ nextflow_process {
 
     }
 
-    test("Get means - get means") {
-
-        when {
-            process {
-                """
-                ch_counts = Channel.fromPath( '$projectDir/tests/test_data/merge_counts/input/counts*.csv', checkIfExists: true).collect()
-                input[0] = ch_counts
-                input[1] = false
-                input[2] = true
-                """
-            }
-        }
-
-        then {
-            assert process.success
-            assert snapshot(process.out).match()
-        }
-
-
 }

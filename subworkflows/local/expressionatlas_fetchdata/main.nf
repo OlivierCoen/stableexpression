@@ -95,7 +95,8 @@ def augmentWithDatasetId( ch_files ) {
     return ch_files
             .map {
                 file ->
-                    [[dataset: file.getSimpleName()], file]
+                    def meta = [dataset: file.getSimpleName()]
+                    [meta, file]
             }
 }
 
@@ -115,7 +116,7 @@ def groupFilesByDatasetId(ch_design, ch_counts) {
         }
         .map { // putting design file in meta
             meta, files ->
-                def newMeta = meta + [design: files[0]]
-                [newMeta, files[1]]
+                def new_meta = meta + [design: files[0]]
+                [new_meta, files[1]]
         }
 }
