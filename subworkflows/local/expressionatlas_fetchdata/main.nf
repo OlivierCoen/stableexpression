@@ -44,6 +44,7 @@ workflow EXPRESSIONATLAS_FETCHDATA {
 
         // appending to accessions provided by the user
         // ensures that no accessions is present twice (provided by the user and fetched from E. Atlas)
+        // removing E-PROT- accessions
         ch_accessions = ch_accessions
                             .concat( EXPRESSIONATLAS_GETACCESSIONS.out.txt.splitText() )
                             .unique()
@@ -59,24 +60,18 @@ workflow EXPRESSIONATLAS_FETCHDATA {
     EXPRESSIONATLAS_GETDATA( ch_accessions )
 
     // adding dataset id (accession + data_type) in the file meta
-    ch_etlas_output_design = augmentWithDatasetId( EXPRESSIONATLAS_GETDATA.out.design.flatten() )
-    ch_eatlas_microarray_normalised_output = augmentWithDatasetId( EXPRESSIONATLAS_GETDATA.out.microarray_normalised.flatten() )
-    ch_eatlas_rnaseq_raw_output = augmentWithDatasetId( EXPRESSIONATLAS_GETDATA.out.rnaseq_raw.flatten() )
+    ch_etlas_design = addDatasetIdToMetadata( EXPRESSIONATLAS_GETDATA.out.design.flatten() )
+    ch_eatlas_counts = addDatasetIdToMetadata( EXPRESSIONATLAS_GETDATA.out.counts.flatten() )
 
-    // adding design files to the meta their respective count files
-    ch_microarray_normalised = groupFilesByDatasetId(
-        ch_etlas_output_design,
-        ch_eatlas_microarray_normalised_output
-    )
+    // adding design files to the meta of their respective count files
+    ch_eatlas_datasets = groupFilesByDatasetId( ch_etlas_design, ch_eatlas_counts )
 
-    ch_rnaseq_raw = groupFilesByDatasetId(
-        ch_etlas_output_design,
-        ch_eatlas_rnaseq_raw_output
-    )
+    // adding normalisation state in the meta
+    addNormalisationStateToMetadata( ch_eatlas_datasets )
 
     emit:
-    microarray_normalised = ch_microarray_normalised
-    rnaseq_raw = ch_rnaseq_raw
+    downloaded_datasets = ch_eatlas_datasets
+
 }
 
 
@@ -91,7 +86,7 @@ workflow EXPRESSIONATLAS_FETCHDATA {
 //
 // Get Expression Atlas Batch ID (accession + data_type) from file stem
 //
-def augmentWithDatasetId( ch_files ) {
+def addDatasetIdToMetadata( ch_files ) {
     return ch_files
             .map {
                 file ->
@@ -102,6 +97,7 @@ def augmentWithDatasetId( ch_files ) {
 
 //
 // Groups design and data files by accession and data_type
+// Design and count files have necessarily the same dataset ID (same file stem)
 //
 def groupFilesByDatasetId(ch_design, ch_counts) {
     return ch_design
@@ -119,4 +115,20 @@ def groupFilesByDatasetId(ch_design, ch_counts) {
                 def new_meta = meta + [design: files[0]]
                 [new_meta, files[1]]
         }
+}
+
+//
+// Add normalised: true / false in meta
+//
+def addNormalisationStateToMetadata( ch_files ) {
+    return ch_files
+            .map {
+                meta, file ->
+                    if ( file.name.endsWith('.raw.csv') ) {
+                        meta.normalised = false
+                    } else {
+                        meta.normalised = true
+                    }
+                    [meta, file]
+            }
 }

@@ -31,18 +31,15 @@ include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_stab
 workflow NFCORE_STABLEEXPRESSION {
 
     take:
-    raw_datasets
-    normalised_datasets
+    input_datasets
 
     main:
 
     //
     // WORKFLOW: Run pipeline
     //
-    STABLEEXPRESSION (
-        raw_datasets,
-        normalised_datasets
-    )
+    STABLEEXPRESSION( input_datasets )
+
     emit:
     multiqc_report = STABLEEXPRESSION.out.multiqc_report // channel: /path/to/multiqc_report.html
 }
@@ -69,8 +66,7 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     NFCORE_STABLEEXPRESSION (
-        PIPELINE_INITIALISATION.out.raw_datasets,
-        PIPELINE_INITIALISATION.out.normalised_datasets
+        PIPELINE_INITIALISATION.out.input_datasets
     )
     //
     // SUBWORKFLOW: Run completion tasks

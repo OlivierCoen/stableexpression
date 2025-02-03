@@ -73,12 +73,11 @@ workflow PIPELINE_INITIALISATION {
     if (params.datasets) {
         ch_input_datasets = parseInputDatasets( params.datasets )
     } else {
-        ch_input_datasets = [ raw: Channel.empty(), normalised: Channel.empty() ]
+        ch_input_datasets = Channel.empty()
     }
 
     emit:
-    raw_datasets = ch_input_datasets.raw
-    normalised_datasets = ch_input_datasets.normalised
+    input_datasets = ch_input_datasets
 
 }
 
@@ -161,16 +160,9 @@ def parseInputDatasets(samplesheet) {
     return Channel.fromList( samplesheetToList(samplesheet, "assets/schema_datasets.json") )
             .map {
                 item ->
-                    def (count_file, design_file, normalised) = item
-                    meta = [dataset: count_file.getBaseName(), design: design_file]
-                    [meta, count_file, normalised]
-            }
-            .branch {
-                item ->
-                    normalised: item[2] == true
-                        return [ item[0], item[1] ]
-                    raw: item[2] == false
-                        return [ item[0], item[1] ]
+                    def (count_file, design_file, normalised_state) = item
+                    meta = [dataset: count_file.getBaseName(), design: design_file, normalised: normalised_state]
+                    [meta, count_file]
             }
 }
 

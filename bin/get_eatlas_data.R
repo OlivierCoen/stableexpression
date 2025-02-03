@@ -122,7 +122,7 @@ export_count_data <- function(result, batch_id) {
     # renaming columns, to make them specific to accession and data type
     colnames(result$count_data) <- get_new_sample_names(result, batch_id)
 
-    outfilename <- paste0(batch_id, '.', result$platform, '.', result$count_type, '.csv')
+    outfilename <- paste0(batch_id, '.', result$platform, '.', result$count_type, '.counts.csv')
 
     # exporting to CSV file
     # index represents gene names
@@ -138,8 +138,8 @@ export_metadata <- function(result, batch_id) {
     df <- data.frame(batch = batch_list, condition = result$sample_groups, sample = new_colnames)
 
     outfilename <- paste0(batch_id, '.design.csv')
-    print(paste('Exporting metadata to file', outfilename))
-    write.table(df, outfilename, sep = ',', row.names = FALSE, col.names = TRUE, quote = FALSE)
+    print(paste('Exporting design data to file', outfilename))
+    write.table(df, outfilename, row.names = FALSE, col.names = TRUE, quote = FALSE)
 }
 
 

@@ -31,8 +31,7 @@ include { paramsSummaryMap                       } from 'plugin/nf-schema'
 workflow STABLEEXPRESSION {
 
     take:
-    ch_raw_datasets
-    ch_normalised_datasets
+    ch_input_datasets
 
 
     main:
@@ -50,24 +49,8 @@ workflow STABLEEXPRESSION {
         params.fetch_eatlas_accessions
     )
 
-    // putting all normalized and raw datasets together (local datasets + Expression Atlas datasets)
-    ch_normalised_datasets = ch_normalised_datasets
-                                .concat( EXPRESSIONATLAS_FETCHDATA.out.microarray_normalised )
-                                .map {
-                                    meta, file ->
-                                        def new_meta = meta + [normalised: true]
-                                        [new_meta, file]
-                                }
-
-    ch_raw_datasets = ch_raw_datasets
-                        .concat( EXPRESSIONATLAS_FETCHDATA.out.rnaseq_raw )
-                        .map {
-                            meta, file ->
-                                def new_meta = meta + [normalised: false]
-                                [new_meta, file]
-                        }
-
-    ch_datasets = ch_normalised_datasets.concat( ch_raw_datasets )
+    // putting all datasets together (local datasets + Expression Atlas datasets)
+    ch_datasets = ch_input_datasets.concat( EXPRESSIONATLAS_FETCHDATA.out.downloaded_datasets )
 
     //
     // MODULE: ID Mapping
