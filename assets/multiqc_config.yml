@@ -54,26 +54,26 @@ custom_data:
         title: "Std"
         description: |
           Standard deviation of the expression across samples.
-          For each sample, expression was determined as log2(cpm + 1).
+          For each sample, expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
         format: "{:,.3f}"
       variation_coefficient:
         title: "Var coeff"
         description: |
           Variation coefficient: std(expression) / mean(expression).
-          For each sample, expression was determined as log2(cpm + 1).
+          For each sample, expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
         format: "{:,.3f}"
       mean:
-        title: "Mean"
+        title: "Mean expression value"
         description: |
           Average expression across samples.
-          For each sample, expression was determined as log2(cpm + 1).
+          For each sample, expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
         format: "{:,.3f}"
       expression_level_quantile_interval:
         title: "Expr. level quantile interval"
         description: |
           Quantile interval of the average expression for this gene (100 intervals from 0 to 99).
           The higher the quantile interval, the higher the average expression.
-          For each sample, expression was determined as log2(cpm + 1).
+          For each sample, expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
         format: "{:,.0f}"
         hidden: true
       quantile_interval_status:
@@ -110,7 +110,7 @@ custom_data:
       sort_rows: false
     description: |
       Distribution of gene expression across samples for the most stable genes.
-      For each sample, expression was determined as log2(cpm + 1) were cpm is the normalised count per million.
+      For each sample, expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
       Genes are ranked from the most stable to the least stable.
     plot_type: "boxplot"
     #xlab: Expression
@@ -121,7 +121,7 @@ custom_data:
     file_format: "csv"
     description: |
       Distribution of descriptive statistics for all genes.
-      Expression was prior calculated as log2(cpm + 1) were cpm is the normalised counts per million across all samples.
+      Expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
     plot_type: "violin"
     pconfig:
       col1_header: "Ensembl Gene ID"
@@ -146,7 +146,7 @@ custom_data:
         title: "Average"
         description: |
           Average expression across samples.
-          Expression was calculated as preprocessed as expression = log2(cpm + 1).
+          Expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
         color: "#01665e"
 
   expression_distributions_by_sample:
@@ -154,7 +154,7 @@ custom_data:
     file_format: "csv"
     description: |
       Distribution of overall gene expression sample by sample.
-      Expression was calculated as log2(cpm + 1) were cpm is the normalised count per million in one sample.
+      Expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
     plot_type: "boxplot"
 
 #violin_downsample_after: 10000
