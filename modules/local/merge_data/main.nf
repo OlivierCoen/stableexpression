@@ -1,5 +1,5 @@
-process MERGE_COUNTS {
-    // debug true
+process MERGE_DATA {
+    debug true
     label 'process_low'
 
     errorStrategy = {
@@ -28,16 +28,22 @@ process MERGE_COUNTS {
 
     input:
     path count_files, stageAs: "?/*"
+    path design_files, stageAs: "?/*"
+    val nb_candidate_genes
 
     output:
-    path 'all_counts.parquet',                                                                                        emit: counts
+    path 'all_counts.parquet',                                                                                        emit: all_counts
+    path 'candidate_gene_counts.parquet',                                                                             emit: candidate_gene_counts
     tuple val("${task.process}"), val('python'),   eval("python3 --version | sed 's/Python //'"),                     topic: versions
     tuple val("${task.process}"), val('polars'),   eval('python3 -c "import polars; print(polars.__version__)"'),     topic: versions
 
 
     script:
     """
-    merge_counts.py --counts "$count_files"
+    merge_data.py \
+        --counts "$count_files" \
+        --designs "$design_files" \
+        --nb-candidate-genes "$nb_candidate_genes"
     """
 
 }

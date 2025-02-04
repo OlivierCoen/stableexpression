@@ -1,0 +1,30 @@
+nextflow_process {
+
+    name "Test Process MERGE_DATA"
+    script "modules/local/merge_data/main.nf"
+    process "MERGE_DATA"
+    tag "merge"
+    tag "module"
+
+    test("Merge counts - filter out genes with zero counts") {
+
+        when {
+            process {
+                """
+                ch_counts = Channel.fromPath( '$projectDir/tests/test_data/merge_data/input/counts*.parquet', checkIfExists: true).collect()
+                ch_designs = Channel.fromPath( '$projectDir/tests/test_data/merge_data/input/design*.csv', checkIfExists: true).collect()
+                input[0] = ch_counts
+                input[1] = ch_designs
+                input[2] = 1000
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}

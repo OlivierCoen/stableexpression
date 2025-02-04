@@ -11,7 +11,7 @@ include { PAIRWISE_GENE_VARIATION                } from '../subworkflows/local/p
 include { EXPRESSION_NORMALISATION               } from '../subworkflows/local/expression_normalisation/main.nf'
 
 include { GPROFILER_IDMAPPING                    } from '../modules/local/gprofiler/idmapping/main'
-include { MERGE_COUNTS                           } from '../modules/local/merge_counts/main'
+include { MERGE_DATA                             } from '../modules/local/merge_data/main'
 include { GENE_STATISTICS                        } from '../modules/local/gene_statistics/main'
 include { MULTIQC                                } from '../modules/nf-core/multiqc/main'
 
@@ -92,15 +92,26 @@ workflow STABLEEXPRESSION {
     )
 
     //
-    // MODULE: Merge count files and filter out zero counts
+    // MODULE: Merge count files and design files and filter out zero counts
     //
 
     EXPRESSION_NORMALISATION.out.normalised_counts
                                     .map { meta, file -> [file] }
                                     .collect()
-                                    | MERGE_COUNTS
+                                    .set { ch_count_files }
 
-    ch_merged_counts = MERGE_COUNTS.out.counts
+    EXPRESSION_NORMALISATION.out.normalised_counts
+                                    .map { meta, file -> [meta.design] }
+                                    .collect()
+                                    .set { ch_design_files }
+
+    MERGE_DATA(
+        ch_count_files,
+        ch_design_files,
+        params.nb_candidates_gene_variation
+    )
+
+    ch_merged_counts = MERGE_DATA.out.all_counts
 
     //
     // STEP: Calculate gene variation

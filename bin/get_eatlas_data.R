@@ -135,7 +135,11 @@ export_metadata <- function(result, batch_id) {
     new_colnames <- get_new_sample_names(result, batch_id)
     batch_list <- rep(batch_id, length(new_colnames))
 
-    df <- data.frame(batch = batch_list, condition = result$sample_groups, sample = new_colnames)
+    df <- data.frame(
+        batch = batch_list,
+        condition = result$sample_groups,
+        sample = new_colnames
+    )
 
     outfilename <- paste0(batch_id, '.design.csv')
     print(paste('Exporting design data to file', outfilename))

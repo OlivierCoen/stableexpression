@@ -13,6 +13,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 ALL_COUNTS_PARQUET_OUTFILENAME = "all_counts.parquet"
+ALL_DESIGNS_OUTFILENAME = "all_designs.csv"
+CANDIDATE_GENE_COUNTS_PARQUET_OUTFILENAME = "candidate_gene_counts.parquet"
 
 ENSEMBL_GENE_ID_COLNAME = "ensembl_gene_id"
 
@@ -30,6 +32,16 @@ def parse_args():
     )
     parser.add_argument(
         "--counts", type=str, dest="count_files", required=True, help="Count files"
+    )
+    parser.add_argument(
+        "--designs", type=str, dest="design_files", required=True, help="Design files"
+    )
+    parser.add_argument(
+        "--nb-candidate-genes",
+        type=int,
+        dest="nb_candidate_genes",
+        required=True,
+        help="Number of candidate genes to keep",
     )
     return parser.parse_args()
 
@@ -122,10 +134,55 @@ def get_nb_rows(lf: pl.LazyFrame):
     return lf.select(pl.len()).collect().item()
 
 
-def export_count_data(filtered_count_lf: pl.LazyFrame):
-    """Export gene expression data to CSV files."""
+def parse_design_file(design_file: Path) -> pl.DataFrame:
+    design_df = pl.read_csv(design_file, has_header=True)
+    # adding batch name from file stem if not present
+    if "batch" not in design_df.columns:
+        design_df = design_df.with_columns(pl.lit(design_file.stem).alias("batch"))
+    return design_df.select("batch", "condition", "sample")
+
+
+def merge_designs(design_files: list[Path]) -> pl.DataFrame:
+    design_dfs = [parse_design_file(design_file) for design_file in design_files]
+    return pl.concat(design_dfs, how="vertical")
+
+
+def get_candidate_gene_counts(
+    count_lf: pl.LazyFrame, nb_candidate_genes: int
+) -> pl.LazyFrame:
+    count_columns = get_count_columns(count_lf)
+    candidate_gene_lf = (
+        count_lf.with_columns(std=pl.concat_list(count_columns).list.std())
+        .sort("std", descending=False)
+        .limit(nb_candidate_genes)
+    )
+    candidate_gene_ids = (
+        candidate_gene_lf.select(ENSEMBL_GENE_ID_COLNAME)
+        .collect()
+        .to_series()
+        .to_list()
+    )
+    return count_lf.filter(pl.col(ENSEMBL_GENE_ID_COLNAME).is_in(candidate_gene_ids))
+
+
+def export_data(
+    filtered_count_lf: pl.LazyFrame,
+    design_df: pl.DataFrame,
+    candidate_gene_counts_lf: pl.LazyFrame,
+):
+    """Export gene expression data."""
     logger.info(f"Exporting normalised counts to: {ALL_COUNTS_PARQUET_OUTFILENAME}")
     filtered_count_lf.collect().write_parquet(ALL_COUNTS_PARQUET_OUTFILENAME)
+
+    logger.info(f"Exporting designs to: {ALL_DESIGNS_OUTFILENAME}")
+    design_df.write_csv(ALL_DESIGNS_OUTFILENAME)
+
+    logger.info(
+        f"Exporting candidate gene counts to: {CANDIDATE_GENE_COUNTS_PARQUET_OUTFILENAME}"
+    )
+    candidate_gene_counts_lf.collect().write_parquet(
+        CANDIDATE_GENE_COUNTS_PARQUET_OUTFILENAME
+    )
 
 
 #####################################################
@@ -138,11 +195,17 @@ def export_count_data(filtered_count_lf: pl.LazyFrame):
 def main():
     args = parse_args()
     count_files = [Path(file) for file in args.count_files.split(" ")]
+    design_files = [Path(file) for file in args.design_files.split(" ")]
 
     # putting all counts into a single dataframe
     count_lf = get_counts(count_files)
+    design_df = merge_designs(design_files)
 
-    export_count_data(count_lf)
+    candidate_gene_counts_lf = get_candidate_gene_counts(
+        count_lf, args.nb_candidate_genes
+    )
+
+    export_data(count_lf, design_df, candidate_gene_counts_lf)
 
 
 if __name__ == "__main__":

@@ -140,6 +140,14 @@
                     "description": "Skip calculation of gene expression variation.",
                     "fa_icon": "fas fa-chart-simple",
                     "help_text": "If you don't want to calculate gene expression variation, you can skip this step by providing `--skip_gene_variation_calc`."
+                },
+                "nb_candidates_gene_variation": {
+                    "type": "integer",
+                    "description": "Number of candidate genes to use for calculation of gene expression variation.",
+                    "fa_icon": "fas fa-chart-simple",
+                    "minimum": 1,
+                    "default": 1000,
+                    "help_text": "Number of candidate genes to use for calculation of gene expression variation. These candidates genes are chosen as the ones showing the least standard variation. Default is 1000."
                 }
             }
         },
