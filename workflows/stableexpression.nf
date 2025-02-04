@@ -117,17 +117,11 @@ workflow STABLEEXPRESSION {
     // STEP: Calculate gene variation
     //
 
-    if (params.skip_gene_variation_calc) {
-
+    if ( params.gene_variation_method == 'pairwise_gene_variation' ) {
+        PAIRWISE_GENE_VARIATION ( ch_candidate_gene_counts )
+        ch_m_measures = PAIRWISE_GENE_VARIATION.out.m_measures
+    } else { // params.gene_variation_method == 'none'
         ch_m_measures = Channel.of( 'none' )
-
-    } else {
-
-        if ( params.gene_variation_method == 'pairwise_gene_variation' ) {
-            PAIRWISE_GENE_VARIATION ( ch_candidate_gene_counts )
-            ch_m_measures = PAIRWISE_GENE_VARIATION.out.m_measures
-        }
-
     }
 
     //
