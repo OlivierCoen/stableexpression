@@ -15,7 +15,7 @@ nextflow_process {
                 ch_designs = Channel.fromPath( '$projectDir/tests/test_data/merge_data/input/design*.csv', checkIfExists: true).collect()
                 input[0] = ch_counts
                 input[1] = ch_designs
-                input[2] = 1000
+                input[2] = 3
                 """
             }
         }

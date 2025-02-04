@@ -12,7 +12,7 @@ nextflow_process {
 
             process {
                 """
-                ch_counts = Channel.fromPath( '$projectDir/tests/test_data/merge_counts/output/all_counts.parquet', checkIfExists: true)
+                ch_counts = Channel.fromPath( '$projectDir/tests/test_data/merge_data/output/all_counts.parquet', checkIfExists: true)
                 ch_metadata = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/metadata*.csv', checkIfExists: true ).collect()
                 ch_mapping = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/mapping*.csv', checkIfExists: true ).collect()
                 ch_m_measures = Channel.of( 'none' )
@@ -20,6 +20,7 @@ nextflow_process {
                 input[1] = ch_metadata
                 input[2] = ch_mapping
                 input[3] = ch_m_measures
+                input[4] = 3
                 """
             }
         }
@@ -39,7 +40,7 @@ nextflow_process {
 
             process {
                 """
-                ch_counts = Channel.fromPath( '$projectDir/tests/test_data/merge_counts/output/all_counts.parquet', checkIfExists: true)
+                ch_counts = Channel.fromPath( '$projectDir/tests/test_data/merge_data/output/all_counts.parquet', checkIfExists: true)
                 ch_metadata = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/metadata*.csv', checkIfExists: true ).collect()
                 ch_mapping = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/mapping*.csv', checkIfExists: true ).collect()
                 ch_m_measures = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/m_measures.csv', checkIfExists: true )
@@ -47,6 +48,7 @@ nextflow_process {
                 input[1] = ch_metadata
                 input[2] = ch_mapping
                 input[3] = ch_m_measures
+                input[4] = 3
                 """
             }
         }

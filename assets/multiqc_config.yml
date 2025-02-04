@@ -69,7 +69,7 @@ custom_data:
           For each sample, expression was determined as log2(cpm + 1).
         format: "{:,.3f}"
       expression_level_quantile_interval:
-        title: "Expr. level"
+        title: "Expr. level quantile interval"
         description: |
           Quantile interval of the average expression for this gene (100 intervals from 0 to 99).
           The higher the quantile interval, the higher the average expression.
@@ -77,7 +77,7 @@ custom_data:
         format: "{:,.0f}"
         hidden: true
       quantile_interval_status:
-        title: "Expr. status"
+        title: "Expression level"
         description: |
           Indication about the average gene expression level compared to the whole pool of genes.
         cond_formatting_rules:

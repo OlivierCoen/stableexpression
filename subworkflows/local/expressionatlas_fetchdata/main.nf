@@ -124,7 +124,7 @@ def addNormalisationStateToMetadata( ch_files ) {
     return ch_files
             .map {
                 meta, file ->
-                    if ( file.name.endsWith('.raw.csv') ) {
+                    if ( file.name.endsWith('.raw.counts.csv') ) {
                         meta.normalised = false
                     } else {
                         meta.normalised = true

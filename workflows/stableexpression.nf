@@ -111,7 +111,7 @@ workflow STABLEEXPRESSION {
         params.nb_candidates_gene_variation
     )
 
-    ch_merged_counts = MERGE_DATA.out.all_counts
+    ch_candidate_gene_counts = MERGE_DATA.out.candidate_gene_counts
 
     //
     // STEP: Calculate gene variation
@@ -124,7 +124,7 @@ workflow STABLEEXPRESSION {
     } else {
 
         if ( params.gene_variation_method == 'pairwise_gene_variation' ) {
-            PAIRWISE_GENE_VARIATION ( ch_merged_counts )
+            PAIRWISE_GENE_VARIATION ( ch_candidate_gene_counts )
             ch_m_measures = PAIRWISE_GENE_VARIATION.out.m_measures
         }
 
@@ -134,10 +134,11 @@ workflow STABLEEXPRESSION {
     // MODULE: Gene statistics
     //
     GENE_STATISTICS(
-        ch_merged_counts,
+        MERGE_DATA.out.all_counts,
         ch_gene_metadata.collect(),
         ch_gene_id_mapping.collect(),
-        ch_m_measures
+        ch_m_measures,
+        params.nb_candidates_gene_variation
     )
 
     ch_top_stable_genes_summary = GENE_STATISTICS.out.top_stable_genes_summary

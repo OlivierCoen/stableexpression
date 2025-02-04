@@ -143,7 +143,7 @@ export_metadata <- function(result, batch_id) {
 
     outfilename <- paste0(batch_id, '.design.csv')
     print(paste('Exporting design data to file', outfilename))
-    write.table(df, outfilename, row.names = FALSE, col.names = TRUE, quote = FALSE)
+    write.table(df, outfilename, sep = ',', row.names = FALSE, col.names = TRUE, quote = FALSE)
 }
 
 

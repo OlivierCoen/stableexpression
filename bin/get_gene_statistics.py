@@ -11,6 +11,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+DEFAULT_NB_TOP_STABLE_GENES = 1000
+
 # outfile names
 TOP_STABLE_GENE_SUMMARY_OUTFILENAME = "top_stable_genes_summary.csv"
 ALL_GENES_RESULT_OUTFILENAME = "stats_all_genes.csv"
@@ -56,7 +58,6 @@ ALL_GENES_STATS_COLS = [
 # quantile intervals
 NB_QUANTILES = 100
 
-NB_TOP_GENES_TO_SHOW_IN_TABLE = 1000
 NB_TOP_GENES_TO_SHOW_IN_LOG_COUNTS = 100
 
 
@@ -90,6 +91,13 @@ def parse_args():
         dest="m_measure_file",
         required=True,
         help="M-measure file",
+    )
+    parser.add_argument(
+        "--nb-top-stable-genes",
+        type=int,
+        dest="nb_top_stable_genes",
+        required=True,
+        help="Number of top stable genes to show",
     )
     return parser.parse_args()
 
@@ -286,9 +294,9 @@ def merge_data(
 
 def sort_dataframe(lf: pl.LazyFrame) -> pl.LazyFrame:
     if M_MEASURE_COLNAME in lf.collect_schema().names():
-        lf = lf.sort(M_MEASURE_COLNAME, descending=False)
+        lf = lf.sort(M_MEASURE_COLNAME, descending=False, nulls_last=True)
     else:
-        lf = lf.sort(STANDARD_DEVIATION_COLNAME, descending=False)
+        lf = lf.sort(STANDARD_DEVIATION_COLNAME, descending=False, nulls_last=True)
     return (
         lf.with_row_index(name="index")
         .with_columns((pl.col("index") + 1).alias("Rank"))
@@ -310,7 +318,9 @@ def get_status(quantile_interval: int) -> str:
         return "Medium range"
 
 
-def get_top_stable_gene_summary(stat_lf: pl.LazyFrame) -> pl.LazyFrame:
+def get_top_stable_gene_summary(
+    stat_lf: pl.LazyFrame, nb_top_stable_genes: int
+) -> pl.LazyFrame:
     """
     Extract the most stable genes from the statistics dataframe.
     """
@@ -319,7 +329,7 @@ def get_top_stable_gene_summary(stat_lf: pl.LazyFrame) -> pl.LazyFrame:
         quantile_interval: get_status(quantile_interval)
         for quantile_interval in range(NB_QUANTILES)
     }
-    lf = stat_lf.head(NB_TOP_GENES_TO_SHOW_IN_TABLE).with_columns(
+    lf = stat_lf.head(nb_top_stable_genes).with_columns(
         pl.col(EXPRESSION_LEVEL_QUANTILE_INTERVAL_COLNAME)
         .replace_strict(mapping_dict)
         .alias(QUANTILE_INTERVAL_STATUS_COLNAME)
@@ -411,6 +421,9 @@ def main():
     metadata_files = [Path(file) for file in args.metadata_files.split(" ")]
     mapping_files = [Path(file) for file in args.mapping_files.split(" ")]
 
+    # we don't want to exceed 1000
+    nb_top_stable_genes = min(args.nb_top_stable_genes, DEFAULT_NB_TOP_STABLE_GENES)
+
     # putting all counts into a single dataframe
     count_lf = get_counts(args.count_file)
 
@@ -437,7 +450,9 @@ def main():
     stat_lf = sort_dataframe(stat_lf)
 
     # getting the most stable genes
-    top_stable_genes_summary_lf = get_top_stable_gene_summary(stat_lf)
+    top_stable_genes_summary_lf = get_top_stable_gene_summary(
+        stat_lf, nb_top_stable_genes
+    )
 
     formated_stat_lf = format_all_genes_dataframe(stat_lf)
 

@@ -1,35 +1,4 @@
 {
-    "Should run without failures": {
-        "content": [
-            {
-                "0": [
-                    "all_counts.parquet:md5,73784fbc1da2f1c675e04463ab5cc0d7"
-                ],
-                "1": [
-                    [
-                        "MERGE_COUNTS",
-                        "python",
-                        "3.12.8"
-                    ]
-                ],
-                "2": [
-                    [
-                        "MERGE_COUNTS",
-                        "polars",
-                        "1.17.1"
-                    ]
-                ],
-                "counts": [
-                    "all_counts.parquet:md5,73784fbc1da2f1c675e04463ab5cc0d7"
-                ]
-            }
-        ],
-        "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "24.10.3"
-        },
-        "timestamp": "2025-01-21T11:36:51.992454125"
-    },
     "Merge counts - filter out genes with zero counts": {
         "content": [
             {
@@ -37,7 +6,7 @@
                     "all_counts.parquet:md5,caf7153ab90e35843c1c257f5b75d739"
                 ],
                 "1": [
-                    "candidate_gene_counts.parquet:md5,caf7153ab90e35843c1c257f5b75d739"
+                    "candidate_gene_counts.parquet:md5,21a51d1f6e9070c19467f18a9f26cc34"
                 ],
                 "2": [
                     [
@@ -57,7 +26,7 @@
                     "all_counts.parquet:md5,caf7153ab90e35843c1c257f5b75d739"
                 ],
                 "candidate_gene_counts": [
-                    "candidate_gene_counts.parquet:md5,caf7153ab90e35843c1c257f5b75d739"
+                    "candidate_gene_counts.parquet:md5,21a51d1f6e9070c19467f18a9f26cc34"
                 ]
             }
         ],
@@ -65,6 +34,6 @@
             "nf-test": "0.9.2",
             "nextflow": "24.10.4"
         },
-        "timestamp": "2025-02-04T10:12:32.381207347"
+        "timestamp": "2025-02-04T10:26:18.913119056"
     }
 }

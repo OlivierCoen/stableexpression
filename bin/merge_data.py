@@ -154,7 +154,7 @@ def get_candidate_gene_counts(
     candidate_gene_lf = (
         count_lf.with_columns(std=pl.concat_list(count_columns).list.std())
         .sort("std", descending=False)
-        .limit(nb_candidate_genes)
+        .head(nb_candidate_genes)
     )
     candidate_gene_ids = (
         candidate_gene_lf.select(ENSEMBL_GENE_ID_COLNAME)

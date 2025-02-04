@@ -29,14 +29,14 @@ workflow EXPRESSION_NORMALISATION {
 
     //
     // MODULE: normalisation of raw count datasets (including downloaded RNA-seq datasets)
+    // at the same time, removing genes that show only zero counts
     //
 
-    ch_datasets.branch {
+    ch_datasets = ch_datasets.branch {
         meta, file ->
             raw: meta.normalised == false
             normalised: meta.normalised == true
         }
-        .set { ch_datasets }
 
     if ( normalisation_method == 'deseq2' ) {
         DESEQ2_NORMALISE( ch_datasets.raw )

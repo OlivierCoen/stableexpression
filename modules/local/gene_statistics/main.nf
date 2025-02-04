@@ -15,6 +15,7 @@ process GENE_STATISTICS {
     path metadata_files, stageAs: "?/*"
     path mapping_files, stageAs: "?/*"
     val m_measure_file
+    val nb_top_stable_genes
 
     output:
     path 'top_stable_genes_summary.csv',                                                                              emit: top_stable_genes_summary
@@ -31,7 +32,8 @@ process GENE_STATISTICS {
         --counts $count_file \
         --metadata "$metadata_files" \
         --mappings "$mapping_files" \
-        --m-measures $m_measure_file
+        --m-measures $m_measure_file \
+        --nb-top-stable-genes $nb_top_stable_genes
     """
 
 }
