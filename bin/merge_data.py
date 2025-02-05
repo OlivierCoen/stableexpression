@@ -165,6 +165,18 @@ def get_candidate_gene_counts(
     return count_lf.filter(pl.col(ENSEMBL_GENE_ID_COLNAME).is_in(candidate_gene_ids))
 
 
+def filter_out_genes_not_always_present(count_lf: pl.LazyFrame):
+    filtered_count_lf = count_lf.filter(
+        pl.concat_list(pl.exclude(ENSEMBL_GENE_ID_COLNAME)).list.min() > 0
+    )
+    # checking if filtered count dataframe is empty
+    if filtered_count_lf.limit(1).collect().is_empty():
+        logger.error("No gene left after filtering for expression > 0 in all samples")
+        sys.exit(101)
+
+    return filtered_count_lf
+
+
 def export_data(
     filtered_count_lf: pl.LazyFrame,
     design_df: pl.DataFrame,
@@ -200,6 +212,9 @@ def main():
     # putting all counts into a single dataframe
     count_lf = get_counts(count_files)
     design_df = merge_designs(design_files)
+
+    # filtering out genes that are not always present
+    count_lf = filter_out_genes_not_always_present(count_lf)
 
     candidate_gene_counts_lf = get_candidate_gene_counts(
         count_lf, args.nb_candidate_genes
