@@ -41,33 +41,32 @@ custom_data:
         title: "Ensembl Gene ID"
         description: |
           Gene IDs as shown in Ensembl
-        format: "{:,.3f}"
       m_measure:
         title: "Stability"
         description: |
           Gene stability measure M as defined in Vandesompele et al., Genome Biology (2002).
           Lower values indicate higher stability.
           M-measures were calculated directly from cpm (normalised count per million).
-        format: "{:,.3f}"
+        format: "{:,.4f}"
         #minrange: 0
       standard_deviation:
         title: "Std"
         description: |
           Standard deviation of the expression across samples.
           For each sample, expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
-        format: "{:,.3f}"
+        format: "{:,.4f}"
       variation_coefficient:
         title: "Var coeff"
         description: |
           Variation coefficient: std(expression) / mean(expression).
           For each sample, expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
-        format: "{:,.3f}"
+        format: "{:,.4f}"
       mean:
         title: "Mean expression value"
         description: |
           Average expression across samples.
           For each sample, expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
-        format: "{:,.3f}"
+        format: "{:,.4f}"
       expression_level_quantile_interval:
         title: "Expr. level quantile interval"
         description: |
