@@ -3,10 +3,10 @@
         "content": [
             {
                 "0": [
-                    "all_counts.parquet:md5,caf7153ab90e35843c1c257f5b75d739"
+                    "all_counts.parquet:md5,04904bd64592a834444d124ef3d7f550"
                 ],
                 "1": [
-                    "candidate_gene_counts.parquet:md5,21a51d1f6e9070c19467f18a9f26cc34"
+                    "candidate_gene_counts.parquet:md5,04904bd64592a834444d124ef3d7f550"
                 ],
                 "2": [
                     [
@@ -23,17 +23,17 @@
                     ]
                 ],
                 "all_counts": [
-                    "all_counts.parquet:md5,caf7153ab90e35843c1c257f5b75d739"
+                    "all_counts.parquet:md5,04904bd64592a834444d124ef3d7f550"
                 ],
                 "candidate_gene_counts": [
-                    "candidate_gene_counts.parquet:md5,21a51d1f6e9070c19467f18a9f26cc34"
+                    "candidate_gene_counts.parquet:md5,04904bd64592a834444d124ef3d7f550"
                 ]
             }
         ],
         "meta": {
             "nf-test": "0.9.2",
-            "nextflow": "24.10.4"
+            "nextflow": "24.10.3"
         },
-        "timestamp": "2025-02-04T10:26:18.913119056"
+        "timestamp": "2025-02-05T12:00:22.17267001"
     }
 }

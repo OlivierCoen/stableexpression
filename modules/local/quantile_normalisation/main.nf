@@ -1,7 +1,6 @@
 process QUANTILE_NORMALISE {
 
     label 'process_low'
-    debug true
 
     publishDir "${params.outdir}/quantile_normalisation"
 
@@ -9,7 +8,7 @@ process QUANTILE_NORMALISE {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'oras://community.wave.seqera.io/library/pandas_pyarrow_python_scikit-learn:679afce0e7171845':
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/2d/2df931a4ea181fe1ea9527abe0fd4aff9453d6ea56d56aee7c4ac5dceed611e3/data':
         'community.wave.seqera.io/library/pandas_pyarrow_python_scikit-learn:6f85e3c4d1706e81' }"
 
     input:

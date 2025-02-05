@@ -26,7 +26,7 @@ process GPROFILER_IDMAPPING {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'oras://community.wave.seqera.io/library/pandas_python_requests:e2bc861ffb0fab18':
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/aa/aad4e61f15d97b7c0a24a4e3ee87a11552464fb7110f530e43bdc9acc374cf13/data':
         'community.wave.seqera.io/library/pandas_python_requests:8c6da05a2935a952' }"
 
     input:
