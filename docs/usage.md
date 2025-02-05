@@ -59,10 +59,13 @@ It should look as follows:
 `datasets.csv`:
 
 ```csv
-counts,design,normalised
-path/to/normalised.counts.csv,path/to/normalised.design.csv,true
-path/to/raw.counts.csv,path/to/raw.design.csv,false
+counts,design,platform,normalised
+path/to/normalised.counts.csv,path/to/normalised.design.csv,rnaseq,true
+path/to/raw.counts.csv,path/to/raw.design.csv,microarray,false
 ```
+
+(the `platform` field can be either `rnaseq` or `microarray`).
+For now, microarray data must be already normalised.
 
 While the counts and design CSV files should have the following structure:
 

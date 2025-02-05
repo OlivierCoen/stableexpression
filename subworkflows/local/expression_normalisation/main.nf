@@ -38,29 +38,23 @@ workflow EXPRESSION_NORMALISATION {
             normalised: meta.normalised == true
         }
 
+    ch_raw_rnaseq_datasets = ch_datasets.raw.filter { meta, file -> meta.platform == 'rnaseq' }
+
     if ( normalisation_method == 'deseq2' ) {
-        DESEQ2_NORMALISE( ch_datasets.raw )
-        ch_raw_datasets_normalised = DESEQ2_NORMALISE.out.cpm
+        DESEQ2_NORMALISE( ch_raw_rnaseq_datasets )
+        ch_raw_rnaseq_datasets_normalised = DESEQ2_NORMALISE.out.cpm
 
     } else { // 'edger'
-        EDGER_NORMALISE( ch_datasets.raw )
-        ch_raw_datasets_normalised = EDGER_NORMALISE.out.cpm
+        EDGER_NORMALISE( ch_raw_rnaseq_datasets )
+        ch_raw_rnaseq_datasets_normalised = EDGER_NORMALISE.out.cpm
     }
-
-    // updating "normalised" state in metadata (only used for introspection for now)
-    ch_raw_datasets_normalised
-        .map { meta, file ->
-            meta.normalised = true
-            [meta, file]
-        }
-        .set { ch_raw_datasets_normalised }
 
     //
     // MODULE: Quantile normalisation
     //
 
     // putting all normalised count datasets together and performing quantile normalisation
-    ch_datasets.normalised.concat( ch_raw_datasets_normalised ) | QUANTILE_NORMALISE
+    ch_datasets.normalised.concat( ch_raw_rnaseq_datasets_normalised ) | QUANTILE_NORMALISE
 
     emit:
     normalised_counts = QUANTILE_NORMALISE.out.counts

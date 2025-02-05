@@ -72,6 +72,7 @@ workflow PIPELINE_INITIALISATION {
     //
     if (params.datasets) {
         ch_input_datasets = parseInputDatasets( params.datasets )
+        validateInputSamplesheet( ch_input_datasets )
     } else {
         ch_input_datasets = Channel.empty()
     }
@@ -160,9 +161,9 @@ def parseInputDatasets(samplesheet) {
     return Channel.fromList( samplesheetToList(samplesheet, "assets/schema_datasets.json") )
             .map {
                 item ->
-                    def (count_file, design_file, normalised_state) = item
-                    meta = [dataset: count_file.getBaseName(), design: design_file, normalised: normalised_state]
-                    [meta, count_file]
+                    def (meta, count_file) = item
+                    new_meta = meta + [dataset: count_file.getBaseName()]
+                    [new_meta, count_file]
             }
 }
 
@@ -171,15 +172,22 @@ def parseInputDatasets(samplesheet) {
 // Validate channels from input samplesheet
 //
 def validateInputSamplesheet(input) {
-    def (metas, fastqs) = input[1..2]
-
-    // Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
-    def endedness_ok = metas.collect{ meta -> meta.single_end }.unique().size == 1
-    if (!endedness_ok) {
-        error("Please check input samplesheet -> Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end: ${metas[0].id}")
+    // checking that all microarray datasets (if any) are normalised
+    input.filter {
+        meta, file ->
+            meta.platform == 'microarray' && !meta.normalised
     }
-
-    return [ metas[0], fastqs ]
+    .count()
+    .map { count ->
+        if (count > 0) {
+            def error_text = [
+                "Error: You provided at least one microarray dataset that is not normalised. ",
+                "Microarray datasets must already be normalised before being submitted. ",
+                "Please perform normalisation (typically using RMA for one-colour intensities / LOESS (limma) for two-colour intensities) and run again."
+            ].join(' ').trim()
+            error(error_text)
+        }
+    }
 }
 
 //

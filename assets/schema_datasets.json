@@ -19,14 +19,22 @@
                 "format": "file-path",
                 "exists": true,
                 "pattern": "^\\S+\\.csv$",
-                "errorMessage": "You must provide a design file"
+                "errorMessage": "You must provide a design file",
+                "meta": ["design"]
+            },
+            "platform": {
+                "type": "string",
+                "errorMessage": "You must specify the platform of the dataset",
+                "enum": ["rnaseq", "microarray"],
+                "meta": ["platform"]
             },
             "normalised": {
                 "type": "boolean",
                 "description": "Specify whether the dataset is already normalised",
-                "errorMessage": "You must specify whether the dataset is already normalised (true or false)"
+                "errorMessage": "You must specify whether the dataset is already normalised (true or false)",
+                "meta": ["normalised"]
             }
         },
-        "required": ["counts", "design", "normalised"]
+        "required": ["counts", "design", "platform", "normalised"]
     }
 }
