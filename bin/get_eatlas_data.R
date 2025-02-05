@@ -81,12 +81,11 @@ download_expression_atlas_data_with_retries <- function(accession, max_retries =
             }
         })
     }
-    print(length(atlas_data))
+
     return(atlas_data)
 }
 
 get_rnaseq_data <- function(data) {
-
     return(list(
         count_data = assays( data )$counts,
         platform = 'rnaseq',
@@ -96,7 +95,6 @@ get_rnaseq_data <- function(data) {
 }
 
 get_one_colour_microarray_data <- function(data) {
-
     return(list(
         count_data = exprs( data ),
         platform = 'microarray',
@@ -207,8 +205,6 @@ if (startsWith(accession, "E-PROT")) {
 # searching and downloading expression atlas data
 atlas_data <- download_expression_atlas_data_with_retries(args$accession)
 
-
-print(atlas_data)
 # writing count data in atlas_data to specific CSV files
 process_data(atlas_data, args$accession)
 

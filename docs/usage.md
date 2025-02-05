@@ -62,10 +62,10 @@ It should look as follows:
 counts,design,platform,normalised
 path/to/normalised.counts.csv,path/to/normalised.design.csv,rnaseq,true
 path/to/raw.counts.csv,path/to/raw.design.csv,microarray,false
+...
 ```
 
 (the `platform` field can be either `rnaseq` or `microarray`).
-For now, microarray data must be already normalised.
 
 While the counts and design CSV files should have the following structure:
 
@@ -78,6 +78,12 @@ gene_2,1,2,3
 ...
 ```
 
+> [!NOTE]
+>
+> - To ensure all RNAseq datasets are processed the same way, it is better to provide them raw.
+>   In case you want to provide normalise counts, please provide CPMs (counts per million) in order to stay aligned with the way raw datasets are processed in the pipeline.
+> - Microarray data must be already normalised. To be compliant with Expression Atlas, you can use the `RMA` or `LOESS` methods.
+
 > [!WARNING]
 > Remember to write a comma before the first sample name. This serves to indicate that the actual first column (gene IDs) is the index
 
@@ -87,6 +93,7 @@ gene_2,1,2,3
 sample,condition
 sample_A,condition_1
 sample_B,condition_2
+...
 ...
 ```
 
