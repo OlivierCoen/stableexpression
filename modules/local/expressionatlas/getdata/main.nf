@@ -10,6 +10,14 @@ process EXPRESSIONATLAS_GETDATA {
     errorStrategy = {
         if (task.exitStatus == 100) {
             // ignoring accessions that cannot be retrieved from Expression Atlas (the script throws a 100 in this case)
+            // sometimes, some datasets are transiently unavailable from Expression Atlas:
+            // we ignore them as there is no point in trying again and again
+            // they will be available again soon but we can't know when
+            // for some other files, they are simply unavailable for good...
+            return 'ignore'
+        } else if (task.exitStatus == 101) {
+            // some datasets are not associated with experiment summary
+            // we ignore them as there they would be useless for us
             return 'ignore'
         } else if (task.exitStatus == 137) { // override default behaviour to sleep some time before retry
             // in case of OOM errors, we wait a bit and try again
@@ -23,7 +31,7 @@ process EXPRESSIONATLAS_GETDATA {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'oras://community.wave.seqera.io/library/bioconductor-expressionatlas_r-base_r-optparse:d24070d263d42ce2':
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/7f/7fd21450c3a3f7df37fa0480170780019e9686be319da1c9e10712f7f17cca26/data':
         'community.wave.seqera.io/library/bioconductor-expressionatlas_r-base_r-optparse:ca0f8cd9d3f44af9' }"
 
     input:

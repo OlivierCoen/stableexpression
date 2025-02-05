@@ -54,6 +54,9 @@ download_expression_atlas_data_with_retries <- function(accession, max_retries =
                 if (grepl("550 Requested action not taken; file unavailable", w$message)) {
                     warning(w$message)
                     quit(save = "no", status = 100) # quit & ignore process
+                } else if (grepl("Download appeared successful but no experiment summary object was found", w$message)) {
+                    warning(w$message)
+                    quit(save = "no", status = 100) # quit & ignore process
                 } else {
                     warning("Unhandled warning: ", w$message)
                     quit(save = "no", status = 1) # quit & stop workflow
@@ -72,7 +75,7 @@ download_expression_atlas_data_with_retries <- function(accession, max_retries =
 
                 if (grepl("Download appeared successful but no experiment summary object was found", e$message)) {
                     warning(e$message)
-                    quit(save = "no", status = 100) # quit & ignore process
+                    quit(save = "no", status = 101) # quit & ignore process
                 } else {
                     warning("Unhandled error: ", e$message)
                     quit(save = "no", status = 1) # quit & stop workflow
