@@ -14,10 +14,16 @@ process EXPRESSIONATLAS_GETDATA {
             // we ignore them as there is no point in trying again and again
             // they will be available again soon but we can't know when
             // for some other files, they are simply unavailable for good...
+            log.warn("Could not retrieve data for accession ${accession}. This could be a transient network issue or a permission error.")
             return 'ignore'
         } else if (task.exitStatus == 101) {
             // some datasets are not associated with experiment summary
             // we ignore them as there they would be useless for us
+            log.warn("Failure to download whole dataset for accession ${accession}. No experiment summary found.")
+            return 'ignore'
+        } else if (task.exitStatus == 102) {
+            // unhandled error: we print an extra message to warn the user
+            log.warn("Unhandled error occurred with accession: ${accession}")
             return 'ignore'
         } else if (task.exitStatus == 137) { // override default behaviour to sleep some time before retry
             // in case of OOM errors, we wait a bit and try again
