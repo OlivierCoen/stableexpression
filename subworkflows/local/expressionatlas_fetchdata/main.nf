@@ -67,7 +67,7 @@ workflow EXPRESSIONATLAS_FETCHDATA {
     ch_eatlas_datasets = groupFilesByDatasetId( ch_etlas_design, ch_eatlas_counts )
 
     // adding normalisation state in the meta
-    addNormalisationStateToMetadata( ch_eatlas_datasets )
+    augmentToMetadata( ch_eatlas_datasets )
 
     emit:
     downloaded_datasets = ch_eatlas_datasets
@@ -117,18 +117,24 @@ def groupFilesByDatasetId(ch_design, ch_counts) {
         }
 }
 
+def getNthPartFromEnd(String s, int n) {
+    def tokens = s.tokenize('.')
+    return tokens[tokens.size() - n]
+}
+
 //
 // Add normalised: true / false in meta
 //
-def addNormalisationStateToMetadata( ch_files ) {
+def augmentToMetadata( ch_files ) {
     return ch_files
             .map {
                 meta, file ->
-                    if ( file.name.endsWith('.raw.counts.csv') ) {
+                    if ( getNthPartFromEnd(file.name, 3) == 'raw' ) {
                         meta.normalised = false
                     } else {
                         meta.normalised = true
                     }
+                    meta.platform = getNthPartFromEnd(file.name, 4)
                     [meta, file]
             }
 }
