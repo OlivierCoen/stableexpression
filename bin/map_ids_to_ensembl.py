@@ -112,10 +112,17 @@ def request_conversion(
     list
         The list of dicts corresponding to the converted IDs.
     """
+
+    if attempts > 0:
+        logger.warning(
+            "g:Profiler main server appears down, trying with the beta server..."
+        )
+
     response = requests.post(
         url=url,
         json={"organism": species, "query": gene_ids, "target": target_database},
     )
+
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:

@@ -12,12 +12,15 @@ process GPROFILER_IDMAPPING {
     errorStrategy = {
         if (task.exitStatus == 100) {
             // ignoring cases when the count dataframe is empty
+            log.warn("Count file is empty for dataset ${meta.dataset}.")
             return 'ignore'
         } else if (task.exitStatus == 101) {
             // likewise, when no mapping could be found, we do not want to continue with the subsequent steps for this specific dataset
+            log.warn("Could not map gene IDs to Ensembl for dataset ${meta.dataset}.")
             return 'ignore'
         } else if (task.exitStatus == 102) {
             // if the server appears to be down, we stop immediately
+            log.error("gProfiler server appears to be down, stopping pipeline")
             return 'terminate'
         } else {
             return 'terminate'
