@@ -120,14 +120,11 @@ def get_counts(files: list[Path]) -> pl.LazyFrame:
     # casting count columns to Float64
     # casting gene id column to String
     count_columns = get_count_columns(merged_lf)
-    return (
-        merged_lf.select(
-            [pl.col(ENSEMBL_GENE_ID_COLNAME).cast(pl.String)]
-            + [pl.col(column).cast(pl.Float64) for column in count_columns]
-        )
-        .fill_null(0)
-        .fill_nan(0)
-    )
+    # casting nans to nulls
+    return merged_lf.select(
+        [pl.col(ENSEMBL_GENE_ID_COLNAME).cast(pl.String)]
+        + [pl.col(column).cast(pl.Float64) for column in count_columns]
+    ).fill_nan(None)
 
 
 def get_nb_rows(lf: pl.LazyFrame):
@@ -152,7 +149,9 @@ def get_candidate_gene_counts(
 ) -> pl.LazyFrame:
     count_columns = get_count_columns(count_lf)
     candidate_gene_lf = (
-        count_lf.with_columns(std=pl.concat_list(count_columns).list.std())
+        count_lf.with_columns(
+            std=pl.concat_list(count_columns).list.drop_nulls().list.std()
+        )
         .sort("std", descending=False)
         .head(nb_candidate_genes)
     )
@@ -165,9 +164,10 @@ def get_candidate_gene_counts(
     return count_lf.filter(pl.col(ENSEMBL_GENE_ID_COLNAME).is_in(candidate_gene_ids))
 
 
-def filter_out_genes_not_always_present(count_lf: pl.LazyFrame):
+def filter_out_genes_never_expressed(count_lf: pl.LazyFrame):
     filtered_count_lf = count_lf.filter(
-        pl.concat_list(pl.exclude(ENSEMBL_GENE_ID_COLNAME)).list.min() > 0
+        pl.concat_list(pl.exclude(ENSEMBL_GENE_ID_COLNAME)).list.drop_nulls().list.min()
+        > 0
     )
     # checking if filtered count dataframe is empty
     if filtered_count_lf.limit(1).collect().is_empty():
@@ -213,8 +213,8 @@ def main():
     count_lf = get_counts(count_files)
     design_df = merge_designs(design_files)
 
-    # filtering out genes that are not always present
-    count_lf = filter_out_genes_not_always_present(count_lf)
+    # filtering out genes that show counts of 0 in all samples
+    count_lf = filter_out_genes_never_expressed(count_lf)
 
     candidate_gene_counts_lf = get_candidate_gene_counts(
         count_lf, args.nb_candidate_genes

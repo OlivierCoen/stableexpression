@@ -43,7 +43,7 @@ process MERGE_DATA {
     merge_data.py \
         --counts "$count_files" \
         --designs "$design_files" \
-        --nb-candidate-genes "$nb_candidate_genes"
+        --nb-candidate-genes $nb_candidate_genes
     """
 
 }
