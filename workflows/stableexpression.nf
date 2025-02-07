@@ -90,20 +90,21 @@ workflow STABLEEXPRESSION {
         ch_datasets,
         params.normalisation_method
     )
+    ch_normalised_counts = EXPRESSION_NORMALISATION.out.normalised_counts
 
     //
     // MODULE: Merge count files and design files and filter out zero counts
     //
 
-    EXPRESSION_NORMALISATION.out.normalised_counts
-                                    .map { meta, file -> [file] }
-                                    .collect()
-                                    .set { ch_count_files }
+    ch_normalised_counts
+        .map { meta, file -> [file] }
+        .collect()
+        .set { ch_count_files }
 
-    EXPRESSION_NORMALISATION.out.normalised_counts
-                                    .map { meta, file -> [meta.design] }
-                                    .collect()
-                                    .set { ch_design_files }
+    ch_normalised_counts
+        .map { meta, file -> [meta.design] }
+        .collect()
+        .set { ch_design_files }
 
     MERGE_DATA(
         ch_count_files,

@@ -11,6 +11,7 @@
 include { DESEQ2_NORMALISE                     } from '../../../modules/local/deseq2/normalise/main'
 include { EDGER_NORMALISE                      } from '../../../modules/local/edger/normalise/main'
 include { QUANTILE_NORMALISE                   } from '../../../modules/local/quantile_normalisation/main'
+include { DATASET_STATISTICS                   } from '../../../modules/local/dataset_statistics/main'
 
 /*
 ========================================================================================
@@ -55,9 +56,17 @@ workflow EXPRESSION_NORMALISATION {
 
     // putting all normalised count datasets together and performing quantile normalisation
     ch_datasets.normalised.concat( ch_raw_rnaseq_datasets_normalised ) | QUANTILE_NORMALISE
+    ch_quantile_normalised_datasets = QUANTILE_NORMALISE.out.counts
+
+    //
+    // MODULE: Dataset statistics
+    //
+
+    DATASET_STATISTICS( ch_quantile_normalised_datasets )
 
     emit:
-    normalised_counts = QUANTILE_NORMALISE.out.counts
+    normalised_counts = ch_quantile_normalised_datasets
+    dataset_statistics = DATASET_STATISTICS.out.stats
 
 }
 

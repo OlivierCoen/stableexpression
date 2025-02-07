@@ -225,8 +225,8 @@ def get_main_statistics(count_lf: pl.LazyFrame) -> pl.LazyFrame:
     logger.info("Getting descriptive statistics")
     count_columns = get_count_columns(count_lf)
     return count_lf.with_columns(
-        mean=pl.concat_list(count_columns).list.mean(),
-        std=pl.concat_list(count_columns).list.std(),
+        mean=pl.concat_list(count_columns).list.drop_nulls().list.mean(),
+        std=pl.concat_list(count_columns).list.drop_nulls().list.std(),
     ).select(
         pl.col(ENSEMBL_GENE_ID_COLNAME),
         pl.col("mean").alias(MEAN_COLNAME),

@@ -27,7 +27,7 @@ OUTPUT_DISTRIBUTION = "uniform"
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Compute mean from count data for each gene"
+        description="Quantile normalise count data for each sample in the dataset"
     )
     parser.add_argument(
         "--counts", type=Path, dest="count_file", required=True, help="Count file"
