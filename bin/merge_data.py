@@ -3,7 +3,6 @@
 # Written by Olivier Coen. Released under the MIT license.
 
 import argparse
-import sys
 import polars as pl
 from pathlib import Path
 import logging
@@ -112,11 +111,6 @@ def get_counts(files: list[Path]) -> pl.LazyFrame:
     # joining all count files
     merged_lf = reduce(join_dfs, lfs)
 
-    # checking if filtered count dataframe is empty
-    if merged_lf.limit(1).collect().is_empty():
-        logger.error("No data found in any of the input count datasets...")
-        sys.exit(100)
-
     # casting count columns to Float64
     # casting gene id column to String
     count_columns = get_count_columns(merged_lf)
@@ -164,27 +158,14 @@ def get_candidate_gene_counts(
     return count_lf.filter(pl.col(ENSEMBL_GENE_ID_COLNAME).is_in(candidate_gene_ids))
 
 
-def filter_out_genes_never_expressed(count_lf: pl.LazyFrame):
-    filtered_count_lf = count_lf.filter(
-        pl.concat_list(pl.exclude(ENSEMBL_GENE_ID_COLNAME)).list.drop_nulls().list.min()
-        > 0
-    )
-    # checking if filtered count dataframe is empty
-    if filtered_count_lf.limit(1).collect().is_empty():
-        logger.error("No gene left after filtering for expression > 0 in all samples")
-        sys.exit(101)
-
-    return filtered_count_lf
-
-
 def export_data(
-    filtered_count_lf: pl.LazyFrame,
+    count_lf: pl.LazyFrame,
     design_df: pl.DataFrame,
     candidate_gene_counts_lf: pl.LazyFrame,
 ):
     """Export gene expression data."""
     logger.info(f"Exporting normalised counts to: {ALL_COUNTS_PARQUET_OUTFILENAME}")
-    filtered_count_lf.collect().write_parquet(ALL_COUNTS_PARQUET_OUTFILENAME)
+    count_lf.collect().write_parquet(ALL_COUNTS_PARQUET_OUTFILENAME)
 
     logger.info(f"Exporting designs to: {ALL_DESIGNS_OUTFILENAME}")
     design_df.write_csv(ALL_DESIGNS_OUTFILENAME)
@@ -212,9 +193,6 @@ def main():
     # putting all counts into a single dataframe
     count_lf = get_counts(count_files)
     design_df = merge_designs(design_files)
-
-    # filtering out genes that show counts of 0 in all samples
-    count_lf = filter_out_genes_never_expressed(count_lf)
 
     candidate_gene_counts_lf = get_candidate_gene_counts(
         count_lf, args.nb_candidate_genes

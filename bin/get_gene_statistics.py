@@ -3,7 +3,7 @@
 # Written by Olivier Coen. Released under the MIT license.
 
 import argparse
-
+import sys
 import polars as pl
 from pathlib import Path
 import logging
@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 DEFAULT_NB_TOP_STABLE_GENES = 1000
+LIMIT_NB_SAMPLES_FOR_EXPORTING_ALL_COUNTS = 100
 
 # outfile names
 TOP_STABLE_GENE_SUMMARY_OUTFILENAME = "top_stable_genes_summary.csv"
@@ -190,15 +191,17 @@ def get_mappings(mapping_files: list[Path]) -> pl.LazyFrame:
     )
 
 
-def preprocess_count(count_lf: pl.LazyFrame) -> pl.LazyFrame:
-    """
-    Preprocess the count data by replacing NaN values with 0 and sorting the dataframe.
-    """
-    # handling NA values (genes that are not found in all datasets)
-    # replace NaN values with 0
-    count_lf = count_lf.fill_null(0)
-    # sorting dataframe (necessary to get consistent output)
-    return count_lf.sort(ENSEMBL_GENE_ID_COLNAME, descending=False)
+def filter_out_genes_with_zero_expression(count_lf: pl.LazyFrame):
+    filtered_count_lf = count_lf.filter(
+        pl.concat_list(pl.exclude(ENSEMBL_GENE_ID_COLNAME)).list.drop_nulls().list.min()
+        > 0
+    )
+    # checking if filtered count dataframe is empty
+    if filtered_count_lf.limit(1).collect().is_empty():
+        logger.error("No gene left after filtering for expression > 0 in all samples")
+        sys.exit(100)
+
+    return filtered_count_lf
 
 
 def transform_counts_to_log_counts(count_lf: pl.LazyFrame) -> pl.LazyFrame:
@@ -398,8 +401,16 @@ def export_data(
     )
     formated_stat_lf.collect().write_csv(ALL_GENES_RESULT_OUTFILENAME)
 
-    logger.info(f"Exporting log normalised counts to: {LOG_COUNTS_OUTFILENAME}")
-    all_log_counts_lf.collect().write_csv(LOG_COUNTS_OUTFILENAME)
+    if (
+        len(get_count_columns(all_log_counts_lf))
+        <= LIMIT_NB_SAMPLES_FOR_EXPORTING_ALL_COUNTS
+    ):
+        logger.info(f"Exporting all log counts to: {LOG_COUNTS_OUTFILENAME}")
+        all_log_counts_lf.collect().write_csv(LOG_COUNTS_OUTFILENAME)
+    else:
+        logger.warning(
+            "Skipping export of normalised counts as number of samples is too high"
+        )
 
     logger.info(
         f"Exporting log normalised counts of the top stable genes to: {TOP_STABLE_GENES_LOG_COUNTS_OUTFILENAME}"
@@ -427,8 +438,11 @@ def main():
     # putting all counts into a single dataframe
     count_lf = get_counts(args.count_file)
 
-    # preprocessing counts (removing 0 counts / log transformation)
-    count_lf = preprocess_count(count_lf)
+    # filtering out genes that show counts of 0 in all samples
+    count_lf = filter_out_genes_with_zero_expression(count_lf)
+
+    # sorting dataframe (necessary to get consistent output)
+    count_lf = count_lf.sort(ENSEMBL_GENE_ID_COLNAME, descending=False)
 
     # getting log2 counts
     all_log_counts_lf = transform_counts_to_log_counts(count_lf)
