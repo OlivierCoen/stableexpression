@@ -15,6 +15,8 @@ QUANT_NORM_SUFFIX = ".quant_norm.parquet"
 DATASET_STATISTICS_SUFFIX = ".dataset_stats.csv"
 
 ENSEMBL_GENE_ID_COLNAME = "ensembl_gene_id"
+SAMPLE_COLNAME = "sample"
+KS_TEST_COLNAME = "kolmogorov_smirnov_to_uniform_dist_pvalue"
 
 
 #####################################################
@@ -48,15 +50,16 @@ def compute_dataset_statistics(count_df: pd.DataFrame):
     dataset_stats_df.loc["skewness"] = count_df.skew()
     # for each sample, test distance to uniform distribution
     ks_tests = compute_kolmogorov_smirnov_test_to_uniform_distribution(count_df)
-    dataset_stats_df.loc["ks_uniform"] = ks_tests
-    return dataset_stats_df
+    dataset_stats_df.loc[KS_TEST_COLNAME] = ks_tests
+    return dataset_stats_df.T
 
 
 def export_count_data(dataset_stats_df: pd.DataFrame, count_file: Path):
     """Export dataset statistics to CSV files."""
     outfilename = count_file.name.replace(QUANT_NORM_SUFFIX, DATASET_STATISTICS_SUFFIX)
     logger.info(f"Exporting dataset statistics counts to: {outfilename}")
-    dataset_stats_df.to_csv(outfilename)
+    dataset_stats_df.index.name = SAMPLE_COLNAME
+    dataset_stats_df.to_csv(outfilename, index=True, header=True)
 
 
 #####################################################

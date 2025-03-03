@@ -13,9 +13,11 @@ nextflow_process {
                 """
                 ch_counts = Channel.fromPath( '$projectDir/tests/test_data/merge_data/input/counts*.parquet', checkIfExists: true).collect()
                 ch_designs = Channel.fromPath( '$projectDir/tests/test_data/merge_data/input/design*.csv', checkIfExists: true).collect()
+                ch_dataset_stat = Channel.fromPath( '$projectDir/tests/test_data/merge_data/input/dataset_stat*.csv', checkIfExists: true).collect()
                 input[0] = ch_counts
                 input[1] = ch_designs
-                input[2] = 3
+                input[2] = ch_dataset_stat
+                input[3] = 3
                 """
             }
         }

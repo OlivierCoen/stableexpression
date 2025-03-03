@@ -13,9 +13,26 @@ logger = logging.getLogger(__name__)
 
 ALL_COUNTS_PARQUET_OUTFILENAME = "all_counts.parquet"
 ALL_DESIGNS_OUTFILENAME = "all_designs.csv"
+GENE_COUNT_STATS_OUTFILENAME = "gene_count_statistics.csv"
+SKEWNESS_STATS_OUTFILENAME = "skewness_statistics.csv"
+KS_TEST_STATS_OUTFILENAME = "ks_test_statistics.csv"
 CANDIDATE_GENE_COUNTS_PARQUET_OUTFILENAME = "candidate_gene_counts.parquet"
 
 ENSEMBL_GENE_ID_COLNAME = "ensembl_gene_id"
+STATISTIC_TYPE_COLNAME = "stat_type"
+GENE_COUNT_COLNAME = "count"
+SKEWNESS_COLNAME = "skewness"
+KS_TEST_COLNAME = "kolmogorov_smirnov_to_uniform_dist_pvalue"
+SAMPLE_COLNAME = "sample"
+
+STAT_COLNAME_TO_PARAMS = {
+    GENE_COUNT_COLNAME: {
+        "outfilename": GENE_COUNT_STATS_OUTFILENAME,
+        "descending": False,
+    },
+    SKEWNESS_COLNAME: {"outfilename": SKEWNESS_STATS_OUTFILENAME, "descending": False},
+    KS_TEST_COLNAME: {"outfilename": KS_TEST_STATS_OUTFILENAME, "descending": True},
+}
 
 
 #####################################################
@@ -36,6 +53,13 @@ def parse_args():
         "--designs", type=str, dest="design_files", required=True, help="Design files"
     )
     parser.add_argument(
+        "--stats",
+        type=str,
+        dest="dataset_stat_files",
+        required=True,
+        help="Dataset stats files",
+    )
+    parser.add_argument(
         "--nb-candidate-genes",
         type=int,
         dest="nb_candidate_genes",
@@ -43,6 +67,11 @@ def parse_args():
         help="Number of candidate genes to keep",
     )
     return parser.parse_args()
+
+
+#####################################################
+# COUNTS
+#####################################################
 
 
 def parse_count_file(count_file: Path) -> pl.LazyFrame:
@@ -80,7 +109,7 @@ def get_valid_lazy_dfs(files: list[Path]) -> list[pl.LazyFrame]:
     return [lf for file, lf in lf_dict.items() if is_valid_df(lf, file)]
 
 
-def join_dfs(lf1: pl.LazyFrame, lf2: pl.LazyFrame):
+def join_count_dfs(lf1: pl.LazyFrame, lf2: pl.LazyFrame) -> pl.LazyFrame:
     """Join two LazyFrames on the ENSEMBL_GENE_ID_COLNAME column.
 
     The how parameter is set to "full" to include all rows from both dfs.
@@ -109,7 +138,7 @@ def get_counts(files: list[Path]) -> pl.LazyFrame:
     # lazy loading
     lfs = get_valid_lazy_dfs(files)
     # joining all count files
-    merged_lf = reduce(join_dfs, lfs)
+    merged_lf = reduce(join_count_dfs, lfs)
 
     # casting count columns to Float64
     # casting gene id column to String
@@ -121,8 +150,13 @@ def get_counts(files: list[Path]) -> pl.LazyFrame:
     ).fill_nan(None)
 
 
-def get_nb_rows(lf: pl.LazyFrame):
+def get_nb_rows(lf: pl.LazyFrame) -> int:
     return lf.select(pl.len()).collect().item()
+
+
+#####################################################
+# DESIGNS
+#####################################################
 
 
 def parse_design_file(design_file: Path) -> pl.DataFrame:
@@ -136,6 +170,25 @@ def parse_design_file(design_file: Path) -> pl.DataFrame:
 def merge_designs(design_files: list[Path]) -> pl.DataFrame:
     design_dfs = [parse_design_file(design_file) for design_file in design_files]
     return pl.concat(design_dfs, how="vertical")
+
+
+#####################################################
+# STATISTICS
+#####################################################
+
+
+def parse_stat_file(stat_file: Path) -> pl.DataFrame:
+    return pl.read_csv(stat_file, has_header=True)
+
+
+def merge_stats(stat_files: list[Path]) -> pl.DataFrame:
+    stat_dfs = [parse_stat_file(stat_file) for stat_file in stat_files]
+    return pl.concat(stat_dfs, how="vertical")
+
+
+#####################################################
+# CANDIDATE GENES
+#####################################################
 
 
 def get_candidate_gene_counts(
@@ -158,6 +211,11 @@ def get_candidate_gene_counts(
     return count_lf.filter(pl.col(ENSEMBL_GENE_ID_COLNAME).is_in(candidate_gene_ids))
 
 
+#####################################################
+# EXPORT
+#####################################################
+
+
 def export_data(
     count_lf: pl.LazyFrame,
     design_df: pl.DataFrame,
@@ -178,6 +236,16 @@ def export_data(
     )
 
 
+def export_individual_statistics(dataset_stats_df: pl.DataFrame):
+    for data_col, params in STAT_COLNAME_TO_PARAMS.items():
+        outfilename = params["outfilename"]
+        logger.info(f"Exporting {data_col} statistics to: {outfilename}")
+        sorted_data = dataset_stats_df[[SAMPLE_COLNAME, data_col]].sort(
+            data_col, descending=params["descending"]
+        )
+        sorted_data.write_csv(outfilename, include_header=False)
+
+
 #####################################################
 #####################################################
 # MAIN
@@ -189,16 +257,21 @@ def main():
     args = parse_args()
     count_files = [Path(file) for file in args.count_files.split(" ")]
     design_files = [Path(file) for file in args.design_files.split(" ")]
+    dataset_stat_files = [Path(file) for file in args.dataset_stat_files.split(" ")]
 
     # putting all counts into a single dataframe
     count_lf = get_counts(count_files)
+    # putting all design data into a single dataframe
     design_df = merge_designs(design_files)
-
+    # putting all stats data into a single dataframe
+    dataset_stats_df = merge_stats(dataset_stat_files)
+    print(dataset_stats_df)
     candidate_gene_counts_lf = get_candidate_gene_counts(
         count_lf, args.nb_candidate_genes
     )
 
     export_data(count_lf, design_df, candidate_gene_counts_lf)
+    export_individual_statistics(dataset_stats_df)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 process GENE_STATISTICS {
-
+    debug true
     label 'process_low'
 
     errorStrategy = {

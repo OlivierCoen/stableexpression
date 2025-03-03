@@ -74,18 +74,15 @@ custom_data:
           Average expression across samples.
           For each sample, expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
         format: "{:,.4f}"
-      expression_level_quantile_interval:
-        title: "Expr. level quantile interval"
-        description: |
-          Quantile interval of the average expression for this gene (100 intervals from 0 to 99).
-          The higher the quantile interval, the higher the average expression.
-          For each sample, expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
-        format: "{:,.0f}"
-        hidden: true
-      quantile_interval_status:
+      expression_level_status:
         title: "Expression level"
         description: |
           Indication about the average gene expression level compared to the whole pool of genes.
+          Expression in [0, 0.05]: Very low expression.
+          Expression in [0.05, 0.1]: Low expression.
+          Expression in [0.1, 0.9]: Medium range.
+          Expression in [0.9, 0.95]: High expression.
+          Expression in [0.95, 1]: Very high expression.
         cond_formatting_rules:
           very_high:
             - s_eq: "Very high expression"
@@ -109,39 +106,14 @@ custom_data:
         title: "Original gene IDs"
         description: |
           Original gene IDs as stated in the input (provided or downloaded) datasets
-
-    gene_statistics:
-      section_name: "Descriptive statistics - All genes"
-      file_format: "csv"
-      description: |
-        Distribution of descriptive statistics for all genes.
-        Expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
-      plot_type: "violin"
-      pconfig:
-        col1_header: "Ensembl Gene ID"
-      headers:
-        # colors from https://colorbrewer2.org/#type=diverging&scheme=BrBG&n=8
-        m_measure:
-          title: "Gene stability M-measure"
-          description: |
-            Gene stability measure M as defined in Vandesompele et al., Genome Biology (2002)
-          color: "#bf812d"
-        standard_deviation:
-          title: "Standard deviation"
-          description: |
-            Standard deviation of the expression across samples
-          color: "#bf812d"
-        variation_coefficient:
-          title: "Variation coefficient"
-          description: |
-            Ratio of standard deviation to mean
-          color: "#f6e8c3"
-        mean:
-          title: "Average"
-          description: |
-            Average expression across samples.
-            Expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
-          color: "#01665e"
+      total_nb_nulls:
+        title: "Nb nulls"
+        description: |
+          Number of samples in which the gene is not represented.
+      nb_nulls_valid_samples:
+        title: "Nb nulls (valid samples)"
+        description: |
+          Number of samples in which the gene is not represented, excluding samples with particularly low overall gene count.
 
   expression_distributions_top_stable_genes:
     section_name: "Expression distribution of the top stable genes (ranked by stability)"
@@ -156,13 +128,85 @@ custom_data:
     #xlab: Expression
     #ylab: Gene
 
-  expression_distributions_by_sample:
-    section_name: "Distribution of expression (all genes together) sample by sample"
+  gene_statistics:
+    section_name: "Descriptive statistics - All genes"
     file_format: "csv"
     description: |
-      Distribution of overall gene expression sample by sample.
+      Distribution of descriptive statistics for all genes.
       Expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
-    plot_type: "boxplot"
+    plot_type: "violin"
+    pconfig:
+      col1_header: "Ensembl Gene ID"
+    headers:
+      # colors from https://colorbrewer2.org/#type=diverging&scheme=BrBG&n=8
+      m_measure:
+        title: "Gene stability M-measure"
+        description: |
+          Gene stability measure M as defined in Vandesompele et al., Genome Biology (2002)
+        color: "#bf812d"
+      standard_deviation:
+        title: "Standard deviation"
+        description: |
+          Standard deviation of the expression across samples
+        color: "#bf812d"
+      variation_coefficient:
+        title: "Variation coefficient"
+        description: |
+          Ratio of standard deviation to mean
+        color: "#f6e8c3"
+      mean:
+        title: "Average"
+        description: |
+          Average expression across samples.
+          Expression was first computed as log2(cpm + 1), then fitted to [0, 1] using scikit-learn's QuantileTransformer.
+        color: "#01665e"
+
+  gene_counts:
+    section_name: "Gene counts"
+    file_format: "csv"
+    description: |
+      Distribution of gene counts across samples.
+    plot_type: "linegraph"
+    pconfig:
+      categories: true
+    headers:
+      count:
+        title: "Gene count"
+        description: |
+          Number of genes included in the dataset after normalisation
+        color: "#bf812d"
+
+  skewness:
+    section_name: "Skewness"
+    file_format: "csv"
+    description: |
+      Distribution of expression skewness across samples.
+    plot_type: "linegraph"
+    pconfig:
+      categories: true
+    headers:
+      skewness:
+        title: "Skewness"
+        description: |
+          Skewness of the distribution of the normalised expression
+        color: "#bf812d"
+
+  uniform_distribution_probabilities:
+    section_name: "Probabilities of uniform count distribution"
+    file_format: "csv"
+    description: |
+      Pvalue of Kolmogorov-Smirnov test to uniform distribution.
+      The higher the pvalue, the more likely the distribution is uniform.
+      If the pvalue < 0.05, the null hypothesis is rejected and the distribution is not uniform
+    plot_type: "linegraph"
+    pconfig:
+      categories: true
+    headers:
+      kolmogorov_smirnov_to_uniform_dist_pvalue:
+        title: "KS test to uniform distribution - pvalue"
+        description: |
+          Pvalue of Kolmogorov-Smirnov test to uniform distribution.
+        color: "#bf812d"
 
 #violin_downsample_after: 10000
 
@@ -178,5 +222,9 @@ sp:
   gene_statistics:
     fn: "*stats_all_genes.csv"
     max_filesize: 50000000 # 50MB
-  expression_distributions_by_sample:
-    fn: "*all_log_counts.csv"
+  gene_counts:
+    fn: "*gene_count_statistics.csv"
+  skewness:
+    fn: "*skewness_statistics.csv"
+  uniform_distribution_probabilities:
+    fn: "*ks_test_statistics.csv"

@@ -91,6 +91,7 @@ workflow STABLEEXPRESSION {
         params.normalisation_method
     )
     ch_normalised_counts = EXPRESSION_NORMALISATION.out.normalised_counts
+    ch_dataset_statistics = EXPRESSION_NORMALISATION.out.dataset_statistics
 
     //
     // MODULE: Merge count files and design files and filter out zero counts
@@ -106,9 +107,15 @@ workflow STABLEEXPRESSION {
         .collect()
         .set { ch_design_files }
 
+    ch_dataset_statistics
+        .map { meta, file -> [file] }
+        .collect()
+        .set { ch_dataset_stat_files }
+
     MERGE_DATA(
         ch_count_files,
         ch_design_files,
+        ch_dataset_stat_files,
         params.nb_candidates_gene_variation
     )
 
@@ -136,16 +143,13 @@ workflow STABLEEXPRESSION {
         params.nb_candidates_gene_variation
     )
 
-    ch_top_stable_genes_summary = GENE_STATISTICS.out.top_stable_genes_summary
-    ch_all_statistics = GENE_STATISTICS.out.all_statistics
-    ch_log_counts = GENE_STATISTICS.out.log_counts
-    ch_top_stable_genes_log_counts = GENE_STATISTICS.out.top_stable_genes_transposed_log_counts
-
     ch_multiqc_files = ch_multiqc_files
-                        .mix( ch_top_stable_genes_summary.collect() )
-                        .mix( ch_all_statistics.collect() )
-                        .mix( ch_log_counts.collect() )
-                        .mix( ch_top_stable_genes_log_counts.collect() )
+                        .mix( GENE_STATISTICS.out.top_stable_genes_summary.collect() )
+                        .mix( GENE_STATISTICS.out.all_statistics.collect() )
+                        .mix( GENE_STATISTICS.out.top_stable_genes_transposed_log_counts.collect() )
+                        .mix( MERGE_DATA.out.gene_count_statistics.collect() )
+                        .mix( MERGE_DATA.out.skewness_statistics.collect() )
+                        .mix( MERGE_DATA.out.ks_test_statistics.collect() )
 
 
     //
@@ -202,9 +206,6 @@ workflow STABLEEXPRESSION {
     )
 
     emit:
-        top_stable_genes_summary = ch_top_stable_genes_summary
-        log_counts = ch_log_counts
-        top_stable_genes_log_counts = ch_top_stable_genes_log_counts
         multiqc_report = MULTIQC.out.report.toList()
 
 }

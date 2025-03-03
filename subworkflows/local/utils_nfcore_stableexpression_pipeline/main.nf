@@ -140,10 +140,13 @@ workflow PIPELINE_COMPLETION {
 //
 
 def validateInputParameters(params) {
+
+    // checking that a species has been provided
     if ( !params.species ) {
         error('You must provide a species name')
     }
 
+    // checking that the user has provided at least one dataset and / or expression atlas arguments
     if (
         !params.datasets
         && !params.eatlas_accessions
@@ -151,6 +154,15 @@ def validateInputParameters(params) {
         && !params.eatlas_keywords
         ) {
         error('You must provide at least either --datasets or --fetch_eatlas_accessions or --eatlas_accessions or --eatlas_keywords')
+    }
+
+    // if expression atlas accessions are provided, checking that they are well formated
+    if ( params.eatlas_accessions ) {
+        for ( accession in params.eatlas_accessions.tokenize(',') ) {
+            if ( !accession.startsWith('E-') ) {
+                error('Expression Atlas accession ' + accession + ' is not well formated. All accessions should start with "E-".')
+            }
+        }
     }
 }
 
