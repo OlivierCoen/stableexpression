@@ -22,6 +22,7 @@ process MERGE_DATA {
     path 'skewness_statistics.csv',                                                                                   emit: skewness_statistics
     path 'ks_test_statistics.csv',                                                                                    emit: ks_test_statistics
     path 'candidate_gene_counts.parquet',                                                                             emit: candidate_gene_counts
+    path 'distribution_correlations.csv',                                                                             emit: distribution_correlations
     tuple val("${task.process}"), val('python'),   eval("python3 --version | sed 's/Python //'"),                     topic: versions
     tuple val("${task.process}"), val('polars'),   eval('python3 -c "import polars; print(polars.__version__)"'),     topic: versions
 

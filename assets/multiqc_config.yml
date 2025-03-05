@@ -208,6 +208,21 @@ custom_data:
           Pvalue of Kolmogorov-Smirnov test to uniform distribution.
         color: "#bf812d"
 
+    distribution_correlations:
+      section_name: "Pearson correlation between sample count distribution and mean distribution"
+      file_format: "csv"
+      description: |
+        For each sample, the correlation between the count distribution and the mean distribution (including all samples) was computed
+      plot_type: "linegraph"
+      pconfig:
+        categories: true
+      headers:
+        correlation:
+          title: "Pearson correlation"
+          description: |
+            Pearson correlation
+          color: "#bf812d"
+
 #violin_downsample_after: 10000
 
 log_filesize_limit: 10000000000 # 10GB
@@ -228,3 +243,5 @@ sp:
     fn: "*skewness_statistics.csv"
   uniform_distribution_probabilities:
     fn: "*ks_test_statistics.csv"
+  distribution_correlations:
+    fn: "*distribution_correlations.csv"
