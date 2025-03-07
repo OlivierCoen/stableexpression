@@ -120,6 +120,7 @@ workflow STABLEEXPRESSION {
     )
 
     ch_candidate_gene_counts = MERGE_DATA.out.candidate_gene_counts
+    ch_ks_stats = MERGE_DATA.out.ks_test_statistics
 
     //
     // STEP: Calculate gene variation
@@ -140,7 +141,9 @@ workflow STABLEEXPRESSION {
         ch_gene_metadata.collect(),
         ch_gene_id_mapping.collect(),
         ch_m_measures,
-        params.nb_candidates_gene_variation
+        params.nb_candidates_gene_variation,
+        ch_ks_stats,
+        params.ks_pvalue_threshold
     )
 
     ch_multiqc_files = ch_multiqc_files
@@ -149,7 +152,8 @@ workflow STABLEEXPRESSION {
                         .mix( GENE_STATISTICS.out.top_stable_genes_transposed_log_counts.collect() )
                         .mix( MERGE_DATA.out.gene_count_statistics.collect() )
                         .mix( MERGE_DATA.out.skewness_statistics.collect() )
-                        .mix( MERGE_DATA.out.ks_test_statistics.collect() )
+                        .mix( ch_ks_stats.collect() )
+                        .mix ( MERGE_DATA.out.distribution_correlations.collect() )
 
 
     //

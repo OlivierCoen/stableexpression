@@ -3,16 +3,16 @@
         "content": [
             {
                 "0": [
-                    "top_stable_genes_summary.csv:md5,998b10612f987448f64b000d4d959569"
+                    "top_stable_genes_summary.csv:md5,21c157a3c8a824b56920e2aa0dd0f44d"
                 ],
                 "1": [
-                    "stats_all_genes.csv:md5,435d278903d1d5fa9ed7271a23bfad05"
+                    "stats_all_genes.csv:md5,bb3ee54dd2a21ccadc9d2fb8376975cf"
                 ],
                 "2": [
-                    "all_log_counts.csv:md5,74ac847e228e3199ac0220ee694d51d4"
+                    "all_log_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
                 ],
                 "3": [
-                    "top_stable_genes_transposed_log_counts.csv:md5,d716bee1ec75f94ca2ee2f89db8b035f"
+                    "top_stable_genes_transposed_log_counts.csv:md5,f3844d4b4f6b9b0ce13d826fba26c810"
                 ],
                 "4": [
                     [
@@ -29,16 +29,16 @@
                     ]
                 ],
                 "all_statistics": [
-                    "stats_all_genes.csv:md5,435d278903d1d5fa9ed7271a23bfad05"
+                    "stats_all_genes.csv:md5,bb3ee54dd2a21ccadc9d2fb8376975cf"
                 ],
                 "log_counts": [
-                    "all_log_counts.csv:md5,74ac847e228e3199ac0220ee694d51d4"
+                    "all_log_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
                 ],
                 "top_stable_genes_summary": [
-                    "top_stable_genes_summary.csv:md5,998b10612f987448f64b000d4d959569"
+                    "top_stable_genes_summary.csv:md5,21c157a3c8a824b56920e2aa0dd0f44d"
                 ],
                 "top_stable_genes_transposed_log_counts": [
-                    "top_stable_genes_transposed_log_counts.csv:md5,d716bee1ec75f94ca2ee2f89db8b035f"
+                    "top_stable_genes_transposed_log_counts.csv:md5,f3844d4b4f6b9b0ce13d826fba26c810"
                 ]
             }
         ],
@@ -46,22 +46,22 @@
             "nf-test": "0.9.2",
             "nextflow": "24.10.4"
         },
-        "timestamp": "2025-02-08T18:00:14.625596851"
+        "timestamp": "2025-03-06T12:21:59.346280605"
     },
     "Without variation data": {
         "content": [
             {
                 "0": [
-                    "top_stable_genes_summary.csv:md5,1058d42898252f207a326ce2aa95559f"
+                    "top_stable_genes_summary.csv:md5,ed5ced10e34bf3a530fac3496a2ad4c6"
                 ],
                 "1": [
-                    "stats_all_genes.csv:md5,9bc5ae8a7ca6dbd4eb95024dac221828"
+                    "stats_all_genes.csv:md5,82d4c1dfad9d1a82bdd59d640006294a"
                 ],
                 "2": [
-                    "all_log_counts.csv:md5,74ac847e228e3199ac0220ee694d51d4"
+                    "all_log_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
                 ],
                 "3": [
-                    "top_stable_genes_transposed_log_counts.csv:md5,5a04259d6aa1aaaef8a4f278ec974648"
+                    "top_stable_genes_transposed_log_counts.csv:md5,6662ad1c9bbccdce113d7e574bf7e45c"
                 ],
                 "4": [
                     [
@@ -78,16 +78,16 @@
                     ]
                 ],
                 "all_statistics": [
-                    "stats_all_genes.csv:md5,9bc5ae8a7ca6dbd4eb95024dac221828"
+                    "stats_all_genes.csv:md5,82d4c1dfad9d1a82bdd59d640006294a"
                 ],
                 "log_counts": [
-                    "all_log_counts.csv:md5,74ac847e228e3199ac0220ee694d51d4"
+                    "all_log_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
                 ],
                 "top_stable_genes_summary": [
-                    "top_stable_genes_summary.csv:md5,1058d42898252f207a326ce2aa95559f"
+                    "top_stable_genes_summary.csv:md5,ed5ced10e34bf3a530fac3496a2ad4c6"
                 ],
                 "top_stable_genes_transposed_log_counts": [
-                    "top_stable_genes_transposed_log_counts.csv:md5,5a04259d6aa1aaaef8a4f278ec974648"
+                    "top_stable_genes_transposed_log_counts.csv:md5,6662ad1c9bbccdce113d7e574bf7e45c"
                 ]
             }
         ],
@@ -95,6 +95,6 @@
             "nf-test": "0.9.2",
             "nextflow": "24.10.4"
         },
-        "timestamp": "2025-02-26T08:06:31.638148021"
+        "timestamp": "2025-03-06T12:21:51.914912465"
     }
 }

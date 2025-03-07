@@ -25,6 +25,8 @@ process GENE_STATISTICS {
     path mapping_files, stageAs: "?/*"
     val m_measure_file
     val nb_top_stable_genes
+    path ks_stats_file
+    val ks_pvalue_threshold
 
     output:
     path 'top_stable_genes_summary.csv',                                                                              emit: top_stable_genes_summary
@@ -42,7 +44,9 @@ process GENE_STATISTICS {
         --metadata "$metadata_files" \
         --mappings "$mapping_files" \
         --m-measures $m_measure_file \
-        --nb-top-stable-genes $nb_top_stable_genes
+        --nb-top-stable-genes $nb_top_stable_genes \
+        --ks-stats $ks_stats_file \
+        --ks-pvalue-threshold $ks_pvalue_threshold
     """
 
 }

@@ -197,10 +197,14 @@ custom_data:
     description: |
       Pvalue of Kolmogorov-Smirnov test to uniform distribution.
       The higher the pvalue, the more likely the distribution is uniform.
-      If the pvalue < 0.05, the null hypothesis is rejected and the distribution is not uniform
+      If the pvalue < 0.05, the null hypothesis is rejected and the distribution is not uniform.
+      Samples showing a pvalue lower than the threshold (set in parameters) when not considered for stability scoring.
     plot_type: "linegraph"
     pconfig:
       categories: true
+      logswitch: true
+      logswitch_active: true
+      logswitch_label: "Log10"
     headers:
       kolmogorov_smirnov_to_uniform_dist_pvalue:
         title: "KS test to uniform distribution - pvalue"
@@ -208,20 +212,21 @@ custom_data:
           Pvalue of Kolmogorov-Smirnov test to uniform distribution.
         color: "#bf812d"
 
-    distribution_correlations:
-      section_name: "Pearson correlation between sample count distribution and mean distribution"
-      file_format: "csv"
-      description: |
-        For each sample, the correlation between the count distribution and the mean distribution (including all samples) was computed
-      plot_type: "linegraph"
-      pconfig:
-        categories: true
-      headers:
-        correlation:
-          title: "Pearson correlation"
-          description: |
-            Pearson correlation
-          color: "#bf812d"
+  distribution_correlations:
+    section_name: "Correlation to mean count distribution"
+    file_format: "csv"
+    description: |
+      For each sample, the correlation between the count distribution and the overall mean count distribution (including all samples) was computed.
+      This graph can help identify samples that are deviating from the mean count distribution.
+    plot_type: "linegraph"
+    pconfig:
+      categories: true
+    headers:
+      correlation:
+        title: "Pearson correlation"
+        description: |
+          Pearson correlation
+        color: "#bf812d"
 
 #violin_downsample_after: 10000
 

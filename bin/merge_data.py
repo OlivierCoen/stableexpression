@@ -125,9 +125,7 @@ def get_count_columns(lf: pl.LazyFrame) -> list[str]:
 
     The ENSEMBL_GENE_ID_COLNAME column contains only gene IDs.
     """
-    return [
-        col for col in lf.collect_schema().names() if col != ENSEMBL_GENE_ID_COLNAME
-    ]
+    return lf.select(pl.exclude(ENSEMBL_GENE_ID_COLNAME)).collect_schema().names()
 
 
 def get_counts(files: list[Path]) -> pl.DataFrame:
@@ -141,9 +139,9 @@ def get_counts(files: list[Path]) -> pl.DataFrame:
     # joining all count files
     merged_lf = reduce(join_count_dfs, lfs)
 
+    count_columns = get_count_columns(merged_lf)
     # casting count columns to Float64
     # casting gene id column to String
-    count_columns = get_count_columns(merged_lf)
     # casting nans to nulls
     return (
         merged_lf.select(
@@ -202,7 +200,11 @@ def compute_distances_to_mean(count_df: pl.DataFrame) -> pl.DataFrame:
         corr_dict["sample"].append(sample)
         corr_dict["correlation"].append(correlation.item())
 
-    return pl.DataFrame(corr_dict)
+    return (
+        pl.DataFrame(corr_dict)
+        .fill_nan(None)
+        .sort(by="correlation", descending=True, nulls_last=True)
+    )
 
 
 #####################################################
@@ -254,7 +256,7 @@ def export_data(
     logger.info(
         f"Exporting distribution correlations to: {DISTRIBUTION_CORRELATIONS_OUTFILENAME}"
     )
-    corr_df.write_csv(DISTRIBUTION_CORRELATIONS_OUTFILENAME)
+    corr_df.write_csv(DISTRIBUTION_CORRELATIONS_OUTFILENAME, include_header=False)
 
 
 def export_individual_statistics(dataset_stats_df: pl.DataFrame):

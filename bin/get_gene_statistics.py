@@ -3,11 +3,9 @@
 # Written by Olivier Coen. Released under the MIT license.
 
 import argparse
-import time
 import polars as pl
 from pathlib import Path
 from dataclasses import dataclass, field
-from functools import wraps
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +43,7 @@ NB_NULLS_COLNAME = "total_nb_nulls"
 NB_NULLS_VALID_SAMPLES_COLNAME = "nb_nulls_valid_samples"
 NB_ZEROS_COLNAME = "nb_zeros"
 STABILITY_SCORE_COLNAME = "stability_score"
+KS_TEST_COLNAME = "kolmogorov_smirnov_to_uniform_dist_pvalue"
 
 STATISTICS_COLS = [
     RANK_COLNAME,
@@ -82,21 +81,6 @@ NB_TOP_GENES_TO_SHOW_IN_LOG_COUNTS = 100
 #####################################################
 
 
-def log_execution_time(func):
-    """Decorator to log the execution time of a function."""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        print(f"Function '{func.__name__}' executed in {elapsed_time:.4f} seconds")
-        return result
-
-    return wrapper
-
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Get statistics from count data for each gene"
@@ -128,6 +112,20 @@ def parse_args():
         required=True,
         help="Number of top stable genes to show",
     )
+    parser.add_argument(
+        "--ks-stats",
+        type=Path,
+        dest="ks_stats_file",
+        required=True,
+        help="KS stats file",
+    )
+    parser.add_argument(
+        "--ks-pvalue-threshold",
+        type=str,
+        dest="ks_pvalue_threshold",
+        required=True,
+        help="KS p-value threshold",
+    )
     return parser.parse_args()
 
 
@@ -147,7 +145,6 @@ def is_valid_lf(lf: pl.LazyFrame, file: Path) -> bool:
         return False
 
 
-@log_execution_time
 def get_valid_lazy_lfs(files: list[Path]) -> list[pl.LazyFrame]:
     """Get a list of valid LazyFrames from a list of files.
 
@@ -163,7 +160,6 @@ def cast_cols_to_string(lf: pl.LazyFrame) -> pl.LazyFrame:
     )
 
 
-@log_execution_time
 def concat_cast_to_string_and_drop_duplicates(files: list[Path]) -> pl.LazyFrame:
     """Concatenate LazyFrames, cast all columns to String, and drop duplicates.
 
@@ -179,18 +175,14 @@ def concat_cast_to_string_and_drop_duplicates(files: list[Path]) -> pl.LazyFrame
     return concat_lf.unique()
 
 
-@log_execution_time
 def get_count_columns(lf: pl.LazyFrame) -> list[str]:
     """Get all column names except the ENSEMBL_GENE_ID_COLNAME column.
 
     The ENSEMBL_GENE_ID_COLNAME column contains only gene IDs.
     """
-    return [
-        col for col in lf.collect_schema().names() if col != ENSEMBL_GENE_ID_COLNAME
-    ]
+    return lf.select(pl.exclude(ENSEMBL_GENE_ID_COLNAME)).collect_schema().names()
 
 
-@log_execution_time
 def cast_count_columns_to_float32(lf: pl.LazyFrame) -> pl.LazyFrame:
     return lf.select(
         [pl.col(ENSEMBL_GENE_ID_COLNAME)]
@@ -198,19 +190,44 @@ def cast_count_columns_to_float32(lf: pl.LazyFrame) -> pl.LazyFrame:
     )
 
 
-@log_execution_time
-def get_counts(file: Path) -> pl.LazyFrame:
+def get_counts(
+    file: Path, ks_stats_file: Path, ks_pvalue_threshold: str
+) -> pl.LazyFrame:
     # sorting dataframe (necessary to get consistent output)
-    return pl.scan_parquet(file).sort(ENSEMBL_GENE_ID_COLNAME, descending=False)
+    count_lf = pl.scan_parquet(file).sort(ENSEMBL_GENE_ID_COLNAME, descending=False)
+    ks_stats_df = pl.read_csv(
+        ks_stats_file, has_header=False, new_columns=[SAMPLE_COLNAME, KS_TEST_COLNAME]
+    )
+
+    # parsing threshold
+    try:
+        ks_pvalue_threshold = float(ks_pvalue_threshold)
+    except ValueError:
+        raise ValueError(
+            f"KS p-value threshold {ks_pvalue_threshold} could not be cast to float"
+        )
+
+    # logging number of samples excluded from analysis
+    not_valid_samples = ks_stats_df.filter(
+        ks_stats_df[KS_TEST_COLNAME] <= ks_pvalue_threshold
+    )[SAMPLE_COLNAME].to_list()
+    logger.warning(
+        f"Excluded {len(not_valid_samples)} samples showing a KS p-value below {ks_pvalue_threshold}"
+    )
+
+    # getting samples for which the Kolmogorov-Smirnov test pvalue is above the threshold
+    valid_samples = ks_stats_df.filter(
+        ks_stats_df[KS_TEST_COLNAME] > ks_pvalue_threshold
+    )[SAMPLE_COLNAME].to_list()
+    # filtering the count dataframe to keep only the valid samples
+    return count_lf.select([ENSEMBL_GENE_ID_COLNAME] + valid_samples)
 
 
-@log_execution_time
 def get_metadata(metadata_files: list[Path]) -> pl.LazyFrame:
     """Retrieve and concatenate metadata from a list of metadata files."""
     return concat_cast_to_string_and_drop_duplicates(metadata_files)
 
 
-@log_execution_time
 def get_mappings(mapping_files: list[Path]) -> pl.LazyFrame:
     concat_lf = concat_cast_to_string_and_drop_duplicates(mapping_files)
     # group by new gene IDs and gets the lis
@@ -227,7 +244,6 @@ def get_mappings(mapping_files: list[Path]) -> pl.LazyFrame:
     )
 
 
-@log_execution_time
 def add_m_measures(stat_lf: pl.LazyFrame, m_measure_file: Path) -> pl.LazyFrame:
     if m_measure_file != "none" and Path(m_measure_file).exists():
         stat_lf = stat_lf.join(
@@ -236,7 +252,6 @@ def add_m_measures(stat_lf: pl.LazyFrame, m_measure_file: Path) -> pl.LazyFrame:
     return stat_lf
 
 
-@log_execution_time
 def merge_data(
     stat_lf: pl.LazyFrame, metadata_lf: pl.LazyFrame, mapping_lf: pl.LazyFrame
 ) -> pl.LazyFrame:
@@ -247,7 +262,6 @@ def merge_data(
     )
 
 
-@log_execution_time
 def sort_dataframe(lf: pl.LazyFrame) -> pl.LazyFrame:
     if M_MEASURE_COLNAME in lf.collect_schema().names():
         lf = lf.sort(M_MEASURE_COLNAME, descending=False, nulls_last=True)
@@ -274,7 +288,6 @@ def get_status(quantile_interval: int) -> str:
         return "Medium range"
 
 
-@log_execution_time
 def get_top_stable_gene_summary(
     stat_lf: pl.LazyFrame, nb_top_stable_genes: int
 ) -> pl.LazyFrame:
@@ -296,7 +309,6 @@ def get_top_stable_gene_summary(
     )
 
 
-@log_execution_time
 def format_all_genes_dataframe(stat_lf: pl.LazyFrame) -> pl.LazyFrame:
     """
     Format the dataframe containing statistics for all genes by selecting the right columns
@@ -311,7 +323,6 @@ def format_all_genes_dataframe(stat_lf: pl.LazyFrame) -> pl.LazyFrame:
     ).sort(ENSEMBL_GENE_ID_COLNAME, descending=False)
 
 
-@log_execution_time
 def get_top_stable_genes_log_counts(
     log_count_lf: pl.LazyFrame, top_stable_genes_summary_lf: pl.LazyFrame
 ) -> pl.DataFrame:
@@ -340,7 +351,6 @@ def get_top_stable_genes_log_counts(
     return sorted_transposed_log_counts_df.transpose(column_names=sorted_stable_genes)
 
 
-@log_execution_time
 def export_data(
     top_stable_genes_summary_lf: pl.LazyFrame,
     formated_stat_lf: pl.LazyFrame,
@@ -379,6 +389,7 @@ def export_data(
 @dataclass
 class StabilityScorer:
     count_lf: pl.LazyFrame
+
     gene_count_per_sample_df: pl.DataFrame = field(init=False)
     stat_lf: pl.LazyFrame = field(init=False)
     count_columns: list[str] = field(init=False)
@@ -389,7 +400,9 @@ class StabilityScorer:
         self.gene_count_per_sample_df = self.get_gene_counts_per_sample()
         self.samples_with_low_gene_count = self.get_samples_with_low_gene_count()
 
-    @log_execution_time
+    def get_valid_counts(self) -> pl.LazyFrame:
+        return self.count_lf.select(pl.exclude(ENSEMBL_GENE_ID_COLNAME))
+
     def get_gene_counts_per_sample(self) -> pl.DataFrame:
         """
         Get the number of non-null values per sample.
@@ -407,7 +420,6 @@ class StabilityScorer:
             )
         )
 
-    @log_execution_time
     def get_samples_with_low_gene_count(self) -> list[str]:
         mean_gene_count = self.gene_count_per_sample_df[GENE_COUNT_COLNAME].mean()
         return (
@@ -420,7 +432,6 @@ class StabilityScorer:
             .to_list()
         )
 
-    @log_execution_time
     def get_main_statistics(self) -> pl.LazyFrame:
         """
         Compute count descriptive statistics for each gene in the count dataframe.
@@ -438,7 +449,6 @@ class StabilityScorer:
             (pl.col("std") / pl.col("mean")).alias(VARIATION_COEFFICIENT_COLNAME),
         )
 
-    @log_execution_time
     def compute_nb_null_values(self):
         # the samples showing a low gene count will not be taken into account for the zero count penalty
         cols_to_exclude = [ENSEMBL_GENE_ID_COLNAME] + self.samples_with_low_gene_count
@@ -457,7 +467,6 @@ class StabilityScorer:
             nb_nulls_valid_samples.alias(NB_NULLS_VALID_SAMPLES_COLNAME),
         )
 
-    @log_execution_time
     def get_quantile_intervals(self):
         """
         Compute the quantile intervals for the mean expression levels of each gene in the dataframe.
@@ -475,7 +484,6 @@ class StabilityScorer:
             .alias(EXPRESSION_LEVEL_QUANTILE_INTERVAL_COLNAME)
         )
 
-    @log_execution_time
     def compute_stability_score(self):
         logger.info("Computing stability score")
         nb_valid_samples = self.gene_count_per_sample_df.select(pl.len()).item() - len(
@@ -493,7 +501,6 @@ class StabilityScorer:
         )
         self.stat_lf = self.stat_lf.with_columns(expr.alias(STABILITY_SCORE_COLNAME))
 
-    @log_execution_time
     def compute_statistics_and_score(self) -> pl.LazyFrame:
         logger.info("Computing statistics and stability score")
         # getting expression statistics
@@ -521,7 +528,7 @@ def main():
     mapping_files = [Path(file) for file in args.mapping_files.split(" ")]
 
     # putting all counts into a single dataframe
-    count_lf = get_counts(args.count_file)
+    count_lf = get_counts(args.count_file, args.ks_stats_file, args.ks_pvalue_threshold)
 
     # getting metadata and mappings
     metadata_lf = get_metadata(metadata_files)

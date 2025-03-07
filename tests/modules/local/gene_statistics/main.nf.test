@@ -16,11 +16,14 @@ nextflow_process {
                 ch_metadata = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/metadata*.csv', checkIfExists: true ).collect()
                 ch_mapping = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/mapping*.csv', checkIfExists: true ).collect()
                 ch_m_measures = Channel.of( 'none' )
+                ch_ks_stat_file = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/ks_stats.csv', checkIfExists: true )
                 input[0] = ch_counts
                 input[1] = ch_metadata
                 input[2] = ch_mapping
                 input[3] = ch_m_measures
                 input[4] = 3
+                input[5] = ch_ks_stat_file
+                input[6] = 0
                 """
             }
         }
@@ -44,11 +47,14 @@ nextflow_process {
                 ch_metadata = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/metadata*.csv', checkIfExists: true ).collect()
                 ch_mapping = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/mapping*.csv', checkIfExists: true ).collect()
                 ch_m_measures = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/m_measures.csv', checkIfExists: true )
+                ch_ks_stat_file = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/ks_stats.csv', checkIfExists: true )
                 input[0] = ch_counts
                 input[1] = ch_metadata
                 input[2] = ch_mapping
                 input[3] = ch_m_measures
                 input[4] = 3
+                input[5] = ch_ks_stat_file
+                input[6] = 0
                 """
             }
         }
