@@ -9,10 +9,10 @@
                     "stats_all_genes.csv:md5,bb3ee54dd2a21ccadc9d2fb8376975cf"
                 ],
                 "2": [
-                    "all_log_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
+                    "all_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
                 ],
                 "3": [
-                    "top_stable_genes_transposed_log_counts.csv:md5,f3844d4b4f6b9b0ce13d826fba26c810"
+                    "top_stable_genes_transposed_counts.csv:md5,f3844d4b4f6b9b0ce13d826fba26c810"
                 ],
                 "4": [
                     [
@@ -32,13 +32,13 @@
                     "stats_all_genes.csv:md5,bb3ee54dd2a21ccadc9d2fb8376975cf"
                 ],
                 "log_counts": [
-                    "all_log_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
+                    "all_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
                 ],
                 "top_stable_genes_summary": [
                     "top_stable_genes_summary.csv:md5,21c157a3c8a824b56920e2aa0dd0f44d"
                 ],
                 "top_stable_genes_transposed_log_counts": [
-                    "top_stable_genes_transposed_log_counts.csv:md5,f3844d4b4f6b9b0ce13d826fba26c810"
+                    "top_stable_genes_transposed_counts.csv:md5,f3844d4b4f6b9b0ce13d826fba26c810"
                 ]
             }
         ],
@@ -58,10 +58,10 @@
                     "stats_all_genes.csv:md5,82d4c1dfad9d1a82bdd59d640006294a"
                 ],
                 "2": [
-                    "all_log_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
+                    "all_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
                 ],
                 "3": [
-                    "top_stable_genes_transposed_log_counts.csv:md5,6662ad1c9bbccdce113d7e574bf7e45c"
+                    "top_stable_genes_transposed_counts.csv:md5,6662ad1c9bbccdce113d7e574bf7e45c"
                 ],
                 "4": [
                     [
@@ -81,13 +81,13 @@
                     "stats_all_genes.csv:md5,82d4c1dfad9d1a82bdd59d640006294a"
                 ],
                 "log_counts": [
-                    "all_log_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
+                    "all_counts.csv:md5,f9b328e9f507cf8335b3ea9a3cb124fd"
                 ],
                 "top_stable_genes_summary": [
                     "top_stable_genes_summary.csv:md5,ed5ced10e34bf3a530fac3496a2ad4c6"
                 ],
                 "top_stable_genes_transposed_log_counts": [
-                    "top_stable_genes_transposed_log_counts.csv:md5,6662ad1c9bbccdce113d7e574bf7e45c"
+                    "top_stable_genes_transposed_counts.csv:md5,6662ad1c9bbccdce113d7e574bf7e45c"
                 ]
             }
         ],

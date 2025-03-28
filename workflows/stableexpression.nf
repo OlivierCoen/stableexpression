@@ -149,7 +149,7 @@ workflow STABLEEXPRESSION {
     ch_multiqc_files = ch_multiqc_files
                         .mix( GENE_STATISTICS.out.top_stable_genes_summary.collect() )
                         .mix( GENE_STATISTICS.out.all_statistics.collect() )
-                        .mix( GENE_STATISTICS.out.top_stable_genes_transposed_log_counts.collect() )
+                        .mix( GENE_STATISTICS.out.top_stable_genes_transposed_counts.collect() )
                         .mix( MERGE_DATA.out.gene_count_statistics.collect() )
                         .mix( MERGE_DATA.out.skewness_statistics.collect() )
                         .mix( ch_ks_stats.collect() )

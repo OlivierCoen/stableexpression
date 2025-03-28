@@ -21,8 +21,8 @@ WEIGHT_RATIO_NB_NULLS = 1
 # outfile names
 TOP_STABLE_GENE_SUMMARY_OUTFILENAME = "top_stable_genes_summary.csv"
 ALL_GENES_RESULT_OUTFILENAME = "stats_all_genes.csv"
-LOG_COUNTS_OUTFILENAME = "all_log_counts.csv"
-TOP_STABLE_GENES_LOG_COUNTS_OUTFILENAME = "top_stable_genes_transposed_log_counts.csv"
+ALL_COUNTS_FILTERED_PARQUET_OUTFILENAME = "all_counts_filtered.parquet"
+TOP_STABLE_GENES_COUNTS_OUTFILENAME = "top_stable_genes_transposed_counts_filtered.csv"
 
 # column names
 RANK_COLNAME = "Rank"
@@ -48,6 +48,7 @@ KS_TEST_COLNAME = "kolmogorov_smirnov_to_uniform_dist_pvalue"
 STATISTICS_COLS = [
     RANK_COLNAME,
     ENSEMBL_GENE_ID_COLNAME,
+    STABILITY_SCORE_COLNAME,
     M_MEASURE_COLNAME,
     STANDARD_DEVIATION_COLNAME,
     VARIATION_COEFFICIENT_COLNAME,
@@ -62,6 +63,7 @@ STATISTICS_COLS = [
 
 ALL_GENES_STATS_COLS = [
     ENSEMBL_GENE_ID_COLNAME,
+    STABILITY_SCORE_COLNAME,
     M_MEASURE_COLNAME,
     MEAN_COLNAME,
     STANDARD_DEVIATION_COLNAME,
@@ -309,7 +311,7 @@ def get_top_stable_gene_summary(
     )
 
 
-def format_all_genes_dataframe(stat_lf: pl.LazyFrame) -> pl.LazyFrame:
+def format_all_genes_statistics(stat_lf: pl.LazyFrame) -> pl.LazyFrame:
     """
     Format the dataframe containing statistics for all genes by selecting the right columns
     and sorting the dataframe by gene ID.
@@ -320,10 +322,10 @@ def format_all_genes_dataframe(stat_lf: pl.LazyFrame) -> pl.LazyFrame:
             for column in ALL_GENES_STATS_COLS
             if column in stat_lf.collect_schema().names()
         ]
-    ).sort(ENSEMBL_GENE_ID_COLNAME, descending=False)
+    ).sort(STABILITY_SCORE_COLNAME, descending=False)
 
 
-def get_top_stable_genes_log_counts(
+def get_top_stable_genes_counts(
     log_count_lf: pl.LazyFrame, top_stable_genes_summary_lf: pl.LazyFrame
 ) -> pl.DataFrame:
     # getting list of top stable genes in the order
@@ -337,7 +339,7 @@ def get_top_stable_genes_log_counts(
     mapping_dict = {item: index for index, item in enumerate(sorted_stable_genes)}
 
     # extracting log counts of top stable genes
-    sorted_transposed_log_counts_df = (
+    sorted_transposed_counts_df = (
         log_count_lf.filter(pl.col(ENSEMBL_GENE_ID_COLNAME).is_in(sorted_stable_genes))
         .with_columns(
             pl.col(ENSEMBL_GENE_ID_COLNAME)
@@ -348,14 +350,14 @@ def get_top_stable_genes_log_counts(
         .drop(["sort_order", ENSEMBL_GENE_ID_COLNAME])
     ).collect()
 
-    return sorted_transposed_log_counts_df.transpose(column_names=sorted_stable_genes)
+    return sorted_transposed_counts_df.transpose(column_names=sorted_stable_genes)
 
 
 def export_data(
     top_stable_genes_summary_lf: pl.LazyFrame,
     formated_stat_lf: pl.LazyFrame,
-    all_log_counts_lf: pl.LazyFrame,
-    top_stable_genes_log_counts_df: pl.DataFrame,
+    all_counts_lf: pl.LazyFrame,
+    top_stable_genes_counts_df: pl.DataFrame,
 ):
     """Export gene expression data to CSV files."""
     logger.info(
@@ -368,13 +370,13 @@ def export_data(
     )
     formated_stat_lf.collect().write_csv(ALL_GENES_RESULT_OUTFILENAME)
 
-    logger.info(f"Exporting all log counts to: {LOG_COUNTS_OUTFILENAME}")
-    all_log_counts_lf.collect().write_csv(LOG_COUNTS_OUTFILENAME)
+    logger.info(f"Exporting all counts to: {ALL_COUNTS_FILTERED_PARQUET_OUTFILENAME}")
+    all_counts_lf.collect().write_parquet(ALL_COUNTS_FILTERED_PARQUET_OUTFILENAME)
 
     logger.info(
-        f"Exporting log normalised counts of the top stable genes to: {TOP_STABLE_GENES_LOG_COUNTS_OUTFILENAME}"
+        f"Exporting counts of the top stable genes to: {TOP_STABLE_GENES_COUNTS_OUTFILENAME}"
     )
-    top_stable_genes_log_counts_df.write_csv(TOP_STABLE_GENES_LOG_COUNTS_OUTFILENAME)
+    top_stable_genes_counts_df.write_csv(TOP_STABLE_GENES_COUNTS_OUTFILENAME)
 
     logger.info("Done")
 
@@ -554,21 +556,21 @@ def main():
         stat_lf, nb_top_stable_genes
     )
 
-    formated_stat_lf = format_all_genes_dataframe(stat_lf)
+    formated_stat_lf = format_all_genes_statistics(stat_lf)
 
     # reducing dataframe size (it is only used for plotting by MultiQC)
-    all_log_counts_lf = cast_count_columns_to_float32(count_lf)
+    count_lf = cast_count_columns_to_float32(count_lf)
 
-    top_stable_genes_log_counts_df = get_top_stable_genes_log_counts(
-        all_log_counts_lf, top_stable_genes_summary_lf
+    top_stable_genes_counts_df = get_top_stable_genes_counts(
+        count_lf, top_stable_genes_summary_lf
     )
 
     # exporting computed data
     export_data(
         top_stable_genes_summary_lf,
         formated_stat_lf,
-        all_log_counts_lf,
-        top_stable_genes_log_counts_df,
+        count_lf,
+        top_stable_genes_counts_df,
     )
 
 
