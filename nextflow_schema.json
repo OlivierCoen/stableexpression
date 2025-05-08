@@ -241,7 +241,6 @@
                     "type": "string",
                     "description": "File size limit when attaching MultiQC reports to summary emails.",
                     "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
-                    "default": "25.MB",
                     "fa_icon": "fas fa-file-upload",
                     "hidden": true
                 },
