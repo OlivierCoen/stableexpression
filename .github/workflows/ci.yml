@@ -34,6 +34,7 @@ jobs:
           - "conda"
           - "docker"
           - "singularity"
+        shard: [1, 2, 3, 4]
         test_name:
           - "test"
         isMaster:
@@ -46,7 +47,9 @@ jobs:
             profile: "singularity"
     steps:
       - name: Check out pipeline code
-        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Nextflow
         uses: nf-core/setup-nextflow@v2
@@ -81,7 +84,16 @@ jobs:
       - name: Clean up Disk space
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
 
+      - name: Install nf-test
+        run: |
+          wget -qO- https://get.nf-test.com | bash
+          sudo mv nf-test /usr/local/bin/
+
+      - name: Run Tests (Shard ${{ matrix.shard }}/${{ strategy.job-total }})
+        run: nf-test test --ci --shard ${{ matrix.shard }}/${{ strategy.job-total }}
+
       - name: "Run pipeline with test data ${{ matrix.NXF_VER }} | ${{ matrix.test_name }} | ${{ matrix.profile }}"
+        continue-on-error: ${{ matrix.NXF_VER == 'latest-everything' }}
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.test_name }},${{ matrix.profile }} --outdir ./results
 
