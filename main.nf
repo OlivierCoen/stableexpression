@@ -9,8 +9,6 @@
 ----------------------------------------------------------------------------------------
 */
 
-nextflow.enable.dsl = 2
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT FUNCTIONS / MODULES / SUBWORKFLOWS / WORKFLOWS
@@ -31,8 +29,17 @@ include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_stab
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
 workflow NFCORE_STABLEEXPRESSION {
+
+    main:
+    //
+    // WORKFLOW: Run pipeline
+    //
     STABLEEXPRESSION()
+
+    emit:
+    multiqc_report = STABLEEXPRESSION.out.multiqc_report // channel: /path/to/multiqc_report.html
 }
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -69,7 +76,8 @@ workflow {
         params.plaintext_email,
         params.outdir,
         params.monochrome_logs,
-        params.hook_url
+        params.hook_url,
+        NFCORE_STABLEEXPRESSION.out.multiqc_report
     )
 }
 
