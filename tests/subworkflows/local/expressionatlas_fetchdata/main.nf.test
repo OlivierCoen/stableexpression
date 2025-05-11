@@ -3,7 +3,7 @@ nextflow_workflow {
     name "Test Workflow EXPRESSIONATLAS_FETCHDATA"
     script "subworkflows/local/expressionatlas_fetchdata/main.nf"
     workflow "EXPRESSIONATLAS_FETCHDATA"
-    tag "subworkflow_expressionatlas_fetchdata"
+    tag "expressionatlas_fetchdata"
     tag "subworkflow"
 
     test("Should run without failures") {
@@ -26,7 +26,8 @@ nextflow_workflow {
 
         then {
             assertAll(
-                { assert workflow.success }
+                { assert workflow.success },
+                { assert snapshot(workflow.out).match() }
             )
         }
 
