@@ -1,54 +1,5 @@
 {
-    "With m-measures": {
-        "content": [
-            {
-                "0": [
-                    "top_stable_genes_summary.csv:md5,c6baebae3e14d83ac581cb251212dac9"
-                ],
-                "1": [
-                    "stats_all_genes.csv:md5,5517a1ed28fe7a8c3bbb7615c1cbeee6"
-                ],
-                "2": [
-                    "all_counts_filtered.parquet:md5,c1d7f14d04ab280b9ff875599127091d"
-                ],
-                "3": [
-                    "top_stable_genes_transposed_counts_filtered.csv:md5,f3844d4b4f6b9b0ce13d826fba26c810"
-                ],
-                "4": [
-                    [
-                        "GENE_STATISTICS",
-                        "python",
-                        "3.12.8"
-                    ]
-                ],
-                "5": [
-                    [
-                        "GENE_STATISTICS",
-                        "polars",
-                        "1.17.1"
-                    ]
-                ],
-                "all_counts": [
-                    "all_counts_filtered.parquet:md5,c1d7f14d04ab280b9ff875599127091d"
-                ],
-                "all_statistics": [
-                    "stats_all_genes.csv:md5,5517a1ed28fe7a8c3bbb7615c1cbeee6"
-                ],
-                "top_stable_genes_summary": [
-                    "top_stable_genes_summary.csv:md5,c6baebae3e14d83ac581cb251212dac9"
-                ],
-                "top_stable_genes_transposed_counts": [
-                    "top_stable_genes_transposed_counts_filtered.csv:md5,f3844d4b4f6b9b0ce13d826fba26c810"
-                ]
-            }
-        ],
-        "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "24.10.6"
-        },
-        "timestamp": "2025-05-08T14:33:43.821951364"
-    },
-    "Without variation data": {
+    "Should run without failures": {
         "content": [
             {
                 "0": [
@@ -93,8 +44,8 @@
         ],
         "meta": {
             "nf-test": "0.9.2",
-            "nextflow": "24.10.6"
+            "nextflow": "25.04.0"
         },
-        "timestamp": "2025-05-08T14:33:25.625515179"
+        "timestamp": "2025-05-11T19:30:08.395767893"
     }
 }

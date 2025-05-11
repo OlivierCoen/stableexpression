@@ -25,7 +25,9 @@ nextflow_workflow {
         }
 
         then {
-            assert workflow.success
+            assertAll(
+                { assert workflow.success }
+            )
         }
 
     }
