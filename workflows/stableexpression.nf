@@ -5,7 +5,6 @@
 */
 
 include { EXPRESSIONATLAS_FETCHDATA              } from '../subworkflows/local/expressionatlas_fetchdata/main'
-include { PAIRWISE_GENE_VARIATION                } from '../subworkflows/local/pairwise_gene_variation/main.nf'
 include { EXPRESSION_NORMALISATION               } from '../subworkflows/local/expression_normalisation/main.nf'
 
 include { GPROFILER_IDMAPPING                    } from '../modules/local/gprofiler/idmapping/main'
@@ -114,22 +113,11 @@ workflow STABLEEXPRESSION {
         ch_count_files,
         ch_design_files,
         ch_dataset_stat_files,
-        params.nb_candidates_gene_variation
+        params.nb_top_gene_candidates
     )
 
     ch_candidate_gene_counts = MERGE_DATA.out.candidate_gene_counts
     ch_ks_stats = MERGE_DATA.out.ks_test_statistics
-
-    //
-    // STEP: Calculate gene variation
-    //
-
-    if ( params.gene_variation_method == 'pairwise_gene_variation' ) {
-        PAIRWISE_GENE_VARIATION ( ch_candidate_gene_counts )
-        ch_m_measures = PAIRWISE_GENE_VARIATION.out.m_measures
-    } else { // params.gene_variation_method == 'none'
-        ch_m_measures = Channel.of( 'none' )
-    }
 
     //
     // MODULE: Gene statistics
@@ -138,8 +126,7 @@ workflow STABLEEXPRESSION {
         MERGE_DATA.out.all_counts,
         ch_gene_metadata.collect(),
         ch_gene_id_mapping.collect(),
-        ch_m_measures,
-        params.nb_candidates_gene_variation,
+        params.nb_top_gene_candidates,
         ch_ks_stats,
         params.ks_pvalue_threshold
     )

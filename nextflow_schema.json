@@ -127,21 +127,13 @@
                     "enum": ["deseq2", "edger"],
                     "default": "deseq2"
                 },
-                "gene_variation_method": {
-                    "type": "string",
-                    "description": "Method to use for calculation of gene expression variation.",
-                    "fa_icon": "fas fa-chart-simple",
-                    "enum": ["none", "pairwise_gene_variation"],
-                    "default": "none",
-                    "help_text": "Pairwise gene variation is a large scale implementation of Genorm (Vandesompele et al., Genome Biology (2002))"
-                },
-                "nb_candidates_gene_variation": {
+                "nb_top_gene_candidates": {
                     "type": "integer",
-                    "description": "Number of candidate genes to use for calculation of gene expression variation.",
+                    "description": "Number of candidate genes to keep in the final list.",
                     "fa_icon": "fas fa-chart-simple",
                     "minimum": 1,
                     "default": 1000,
-                    "help_text": "Number of candidate genes to use for calculation of gene expression variation. These candidates genes are chosen as the ones showing the least standard variation. Default is 1000."
+                    "help_text": "Number of candidate genes to keep in the final list. These candidates genes are chosen as the ones showing the least standard variation. Default is 1000."
                 },
                 "ks_pvalue_threshold": {
                     "type": "number",

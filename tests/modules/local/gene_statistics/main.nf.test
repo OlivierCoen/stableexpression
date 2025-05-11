@@ -6,7 +6,7 @@ nextflow_process {
     tag "genestats"
     tag "module"
 
-    test("Without variation data") {
+    test("Should run without failures") {
 
         when {
 
@@ -15,53 +15,22 @@ nextflow_process {
                 ch_counts = Channel.fromPath( '$projectDir/tests/test_data/merge_data/output/all_counts.parquet', checkIfExists: true)
                 ch_metadata = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/metadata*.csv', checkIfExists: true ).collect()
                 ch_mapping = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/mapping*.csv', checkIfExists: true ).collect()
-                ch_m_measures = Channel.of( 'none' )
                 ch_ks_stat_file = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/ks_stats.csv', checkIfExists: true )
                 input[0] = ch_counts
                 input[1] = ch_metadata
                 input[2] = ch_mapping
-                input[3] = ch_m_measures
-                input[4] = 3
-                input[5] = ch_ks_stat_file
-                input[6] = 0
+                input[3] = 3
+                input[4] = ch_ks_stat_file
+                input[5] = 0
                 """
             }
         }
 
         then {
-            assert process.success
-            assert snapshot(process.out).match()
-        }
-
-    }
-
-    test("With m-measures") {
-
-        tag "genestats_m_measure"
-
-        when {
-
-            process {
-                """
-                ch_counts = Channel.fromPath( '$projectDir/tests/test_data/merge_data/output/all_counts.parquet', checkIfExists: true)
-                ch_metadata = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/metadata*.csv', checkIfExists: true ).collect()
-                ch_mapping = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/mapping*.csv', checkIfExists: true ).collect()
-                ch_m_measures = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/m_measures.csv', checkIfExists: true )
-                ch_ks_stat_file = Channel.fromPath( '$projectDir/tests/test_data/gene_statistics/input/ks_stats.csv', checkIfExists: true )
-                input[0] = ch_counts
-                input[1] = ch_metadata
-                input[2] = ch_mapping
-                input[3] = ch_m_measures
-                input[4] = 3
-                input[5] = ch_ks_stat_file
-                input[6] = 0
-                """
-            }
-        }
-
-        then {
-            assert process.success
-            assert snapshot(process.out).match()
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
         }
 
     }

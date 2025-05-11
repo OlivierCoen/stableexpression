@@ -29,7 +29,6 @@ RANK_COLNAME = "Rank"
 ORIGINAL_GENE_ID_COLNAME = "original_gene_id"
 ORIGINAL_GENE_IDS_COLNAME = "original_gene_ids"
 ENSEMBL_GENE_ID_COLNAME = "ensembl_gene_id"
-M_MEASURE_COLNAME = "m_measure"
 GENE_NAME_COLNAME = "name"
 GENE_DESCRIPTION_COLNAME = "description"
 VARIATION_COEFFICIENT_COLNAME = "variation_coefficient"
@@ -49,7 +48,6 @@ STATISTICS_COLS = [
     RANK_COLNAME,
     ENSEMBL_GENE_ID_COLNAME,
     STABILITY_SCORE_COLNAME,
-    M_MEASURE_COLNAME,
     STANDARD_DEVIATION_COLNAME,
     VARIATION_COEFFICIENT_COLNAME,
     MEAN_COLNAME,
@@ -64,7 +62,6 @@ STATISTICS_COLS = [
 ALL_GENES_STATS_COLS = [
     ENSEMBL_GENE_ID_COLNAME,
     STABILITY_SCORE_COLNAME,
-    M_MEASURE_COLNAME,
     MEAN_COLNAME,
     STANDARD_DEVIATION_COLNAME,
     VARIATION_COEFFICIENT_COLNAME,
@@ -99,13 +96,6 @@ def parse_args():
     )
     parser.add_argument(
         "--mappings", type=str, dest="mapping_files", required=True, help="Mapping file"
-    )
-    parser.add_argument(
-        "--m-measures",
-        type=str,
-        dest="m_measure_file",
-        required=True,
-        help="M-measure file",
     )
     parser.add_argument(
         "--nb-top-stable-genes",
@@ -246,14 +236,6 @@ def get_mappings(mapping_files: list[Path]) -> pl.LazyFrame:
     )
 
 
-def add_m_measures(stat_lf: pl.LazyFrame, m_measure_file: Path) -> pl.LazyFrame:
-    if m_measure_file != "none" and Path(m_measure_file).exists():
-        stat_lf = stat_lf.join(
-            pl.scan_csv(m_measure_file), on=ENSEMBL_GENE_ID_COLNAME, how="left"
-        ).sort(M_MEASURE_COLNAME, descending=False)
-    return stat_lf
-
-
 def merge_data(
     stat_lf: pl.LazyFrame, metadata_lf: pl.LazyFrame, mapping_lf: pl.LazyFrame
 ) -> pl.LazyFrame:
@@ -265,12 +247,9 @@ def merge_data(
 
 
 def sort_dataframe(lf: pl.LazyFrame) -> pl.LazyFrame:
-    if M_MEASURE_COLNAME in lf.collect_schema().names():
-        lf = lf.sort(M_MEASURE_COLNAME, descending=False, nulls_last=True)
-    else:
-        lf = lf.sort(STABILITY_SCORE_COLNAME, descending=False, nulls_last=True)
     return (
-        lf.with_row_index(name="index")
+        lf.sort(STABILITY_SCORE_COLNAME, descending=False, nulls_last=True)
+        .with_row_index(name="index")
         .with_columns((pl.col("index") + 1).alias("Rank"))
         .drop("index")
     )
@@ -539,9 +518,6 @@ def main():
     # computing statistics (mean, standard deviation, coefficient of variation, quantiles)
     stability_scorer = StabilityScorer(count_lf)
     stat_lf = stability_scorer.compute_statistics_and_score()
-
-    # adding other statistics (example: m-measure)
-    stat_lf = add_m_measures(stat_lf, args.m_measure_file)
 
     # add gene name, description and original gene IDs
     stat_lf = merge_data(stat_lf, metadata_lf, mapping_lf)
