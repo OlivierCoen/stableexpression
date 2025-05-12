@@ -91,20 +91,23 @@
     },
     "Two Expression Atlas accessions provided": {
         "content": [
-            [
-                "stats_most_stable_genes.csv:md5,91a38d6845c7a8bdd744b5bd7d14580d"
-            ],
-            [
-                "stats_all_genes.csv:md5,a209dc78d21f5ec26dadccc33a121602"
-            ],
-            [
-                "count_summary.csv:md5,d663b54f74d651807188ccf1eb5ca7e2"
-            ]
+            {
+                "0": [
+                    [
+                        "multiqc_report.html:md5,eb870e24fa1d767bdddc89be9add54b6"
+                    ]
+                ],
+                "multiqc_report": [
+                    [
+                        "multiqc_report.html:md5,eb870e24fa1d767bdddc89be9add54b6"
+                    ]
+                ]
+            }
         ],
         "meta": {
             "nf-test": "0.9.2",
-            "nextflow": "24.10.3"
+            "nextflow": "25.04.0"
         },
-        "timestamp": "2025-01-09T10:46:17.955565042"
+        "timestamp": "2025-05-11T22:54:00.699548935"
     }
 }

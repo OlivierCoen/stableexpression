@@ -23,9 +23,13 @@ nextflow_workflow {
         }
 
         then {
-            assertAll(
-                { assert workflow.success }
-            )
+            assert workflow.success
+            with(workflow.out.multiqc_report[0]) {
+                assertAll(
+                    { assert path(get(0)).readLines().any { it.contains('MultiQC: A modular tool') } },
+                    { assert path(get(0)).readLines().any { it.contains('Data was processed using nf-core/stableexpression') } }
+                )
+            }
         }
     }
 
@@ -46,9 +50,13 @@ nextflow_workflow {
         }
 
         then {
-            assertAll(
-                { assert workflow.success }
-            )
+            assert workflow.success
+            with(workflow.out.multiqc_report[0]) {
+                assertAll(
+                    { assert path(get(0)).readLines().any { it.contains('MultiQC: A modular tool') } },
+                    { assert path(get(0)).readLines().any { it.contains('Data was processed using nf-core/stableexpression') } }
+                )
+            }
         }
     }
 
@@ -69,9 +77,13 @@ nextflow_workflow {
         }
 
         then {
-            assertAll(
-                { assert workflow.success }
-            )
+            assert workflow.success
+            with(workflow.out.multiqc_report[0]) {
+                assertAll(
+                    { assert path(get(0)).readLines().any { it.contains('MultiQC: A modular tool') } },
+                    { assert path(get(0)).readLines().any { it.contains('Data was processed using nf-core/stableexpression') } }
+                )
+            }
         }
     }
 
@@ -92,9 +104,13 @@ nextflow_workflow {
         }
 
         then {
-            assertAll(
-                { assert workflow.success }
-            )
+            assert workflow.success
+            with(workflow.out.multiqc_report[0]) {
+                assertAll(
+                    { assert path(get(0)).readLines().any { it.contains('MultiQC: A modular tool') } },
+                    { assert path(get(0)).readLines().any { it.contains('Data was processed using nf-core/stableexpression') } }
+                )
+            }
         }
     }
 
@@ -116,9 +132,13 @@ nextflow_workflow {
         }
 
         then {
-            assertAll(
-                { assert workflow.success }
-            )
+            assert workflow.success
+            with(workflow.out.multiqc_report[0]) {
+                assertAll(
+                    { assert path(get(0)).readLines().any { it.contains('MultiQC: A modular tool') } },
+                    { assert path(get(0)).readLines().any { it.contains('Data was processed using nf-core/stableexpression') } }
+                )
+            }
         }
     }
 
@@ -140,9 +160,13 @@ nextflow_workflow {
         }
 
         then {
-            assertAll(
-                { assert workflow.success }
-            )
+            assert workflow.success
+            with(workflow.out.multiqc_report[0]) {
+                assertAll(
+                    { assert path(get(0)).readLines().any { it.contains('MultiQC: A modular tool') } },
+                    { assert path(get(0)).readLines().any { it.contains('Data was processed using nf-core/stableexpression') } }
+                )
+            }
         }
 
     }

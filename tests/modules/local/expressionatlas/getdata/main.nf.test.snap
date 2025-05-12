@@ -32,9 +32,9 @@
         ],
         "meta": {
             "nf-test": "0.9.2",
-            "nextflow": "24.10.3"
+            "nextflow": "25.04.0"
         },
-        "timestamp": "2025-02-05T11:57:28.612816303"
+        "timestamp": "2025-05-12T12:17:16.305872196"
     },
     "Arabidopsis Geo dataset": {
         "content": [
@@ -69,9 +69,9 @@
         ],
         "meta": {
             "nf-test": "0.9.2",
-            "nextflow": "24.10.3"
+            "nextflow": "25.04.0"
         },
-        "timestamp": "2025-02-05T11:57:56.559387597"
+        "timestamp": "2025-05-12T12:17:49.460792842"
     },
     "Transcription profiling by array of Arabidopsis mutant for fis2 (microarray)": {
         "content": [
@@ -106,8 +106,8 @@
         ],
         "meta": {
             "nf-test": "0.9.2",
-            "nextflow": "24.10.3"
+            "nextflow": "25.04.0"
         },
-        "timestamp": "2025-02-05T11:57:41.835653262"
+        "timestamp": "2025-05-12T12:17:33.926612754"
     }
 }
