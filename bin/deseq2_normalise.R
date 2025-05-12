@@ -67,7 +67,7 @@ get_normalised_counts <- function(dds) {
 }
 
 
-get_log2_cpm_counts <- function(normalised_counts, filtered_count_matrix) {
+get_cpm_counts <- function(normalised_counts, filtered_count_matrix) {
     # calculate total counts per sample (library size)
     library_sizes <- colSums(filtered_count_matrix)
     # convert normalised counts to CPM
@@ -127,7 +127,7 @@ get_normalised_cpm_counts <- function(count_file, design_file) {
 
     normalised_counts <- get_normalised_counts(dds)
 
-    cpm_counts <- get_log2_cpm_counts(normalised_counts, filtered_count_matrix)
+    cpm_counts <- get_cpm_counts(normalised_counts, filtered_count_matrix)
 
     return(cpm_counts)
 }

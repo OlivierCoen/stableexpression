@@ -62,7 +62,7 @@ filter_out_lowly_expressed_genes <- function(dge) {
 }
 
 
-get_log2_cpm_counts <- function(dge) {
+get_cpm_counts <- function(dge) {
     cpm_counts <- cpm(dge, normalised.lib.sizes = TRUE)
     return(cpm_counts)
 }
@@ -108,7 +108,7 @@ get_normalised_cpm_counts <- function(count_file, design_file) {
     # normalisation
     dge <- calcNormFactors(dge, method="TMM")
 
-    cpm_counts <- get_log2_cpm_counts(dge)
+    cpm_counts <- get_cpm_counts(dge)
 
     return(cpm_counts)
 }
