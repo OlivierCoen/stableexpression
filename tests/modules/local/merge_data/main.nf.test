@@ -27,8 +27,27 @@ nextflow_process {
         then {
             assertAll(
                 { assert process.success },
-                { assert snapshot(process.out).match() }
+                { assert path(process.out.all_counts[0]).exists() },
+                { assert snapshot(process.out.all_designs).match() },
+                { assert path(process.out.candidate_gene_counts[0]).exists() },
+                { with( path(process.out.distribution_correlations[0]).csv( header: false ) ) {
+                    assert rowCount == 27
+                    assert columnCount == 2
+                }},
+                { with( path(process.out.gene_count_statistics[0]).csv( header: false ) ) {
+                    assert rowCount == 27
+                    assert columnCount == 2
+                }},
+                { with( path(process.out.skewness_statistics[0]).csv( header: false ) ) {
+                    assert rowCount == 27
+                    assert columnCount == 2
+                }},
+                { with( path(process.out.ks_test_statistics[0]).csv( header: false ) ) {
+                    assert rowCount == 27
+                    assert columnCount == 2
+                }}
             )
+
 
         }
 
