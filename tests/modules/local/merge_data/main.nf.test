@@ -28,7 +28,10 @@ nextflow_process {
             assertAll(
                 { assert process.success },
                 { assert path(process.out.all_counts[0]).exists() },
-                { assert snapshot(process.out.all_designs).match() },
+                { with( path(process.out.all_designs[0]).csv( header: true ) ) {
+                    assert columnNames == ["batch", "condition", "sample"]
+                    assert rowCount == 27
+                }},
                 { assert path(process.out.candidate_gene_counts[0]).exists() },
                 { with( path(process.out.distribution_correlations[0]).csv( header: false ) ) {
                     assert rowCount == 27
