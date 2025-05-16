@@ -1,13 +1,39 @@
 process EXPRESSIONATLAS_GETDATA {
 
-    // when there are network issues, we retry the download with a backoff
-    // errorStrategy { sleep(Math.pow(2, task.attempt) * 200 as long); return 'retry' }
-    // maxRetries 5
+    label 'process_low'
 
-    // limiting threads to avoid issues with the Expression Atlas API
-    maxForks 4
+    // limiting to 8 threads at a time to avoid 429 errors with the Expression Atlas API server
+    maxForks 8
 
     tag "$accession"
+
+    errorStrategy = {
+        if (task.exitStatus == 100) {
+            // ignoring accessions that cannot be retrieved from Expression Atlas (the script throws a 100 in this case)
+            // sometimes, some datasets are transiently unavailable from Expression Atlas:
+            // we ignore them as there is no point in trying again and again
+            // they will be available again soon but we can't know when
+            // for some other files, they are simply unavailable for good...
+            log.warn("Could not retrieve data for accession ${accession}. This could be a transient network issue or a permission error.")
+            return 'ignore'
+        } else if (task.exitStatus == 101) {
+            // some datasets are not associated with experiment summary
+            // we ignore them as there they would be useless for us
+            log.warn("Failure to download whole dataset for accession ${accession}. No experiment summary found.")
+            return 'ignore'
+        } else if (task.exitStatus == 102) {
+            // unhandled error: we print an extra message to warn the user
+            log.warn("Unhandled error occurred with accession: ${accession}")
+            return 'ignore'
+        } else if (task.exitStatus == 137) { // override default behaviour to sleep some time before retry
+            // in case of OOM errors, we wait a bit and try again
+            sleep(Math.pow(2, task.attempt) * 2000 as long)
+            return 'retry'
+        } else {
+            return 'terminate'
+        }
+    }
+    maxRetries = 5
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -18,14 +44,11 @@ process EXPRESSIONATLAS_GETDATA {
     val(accession)
 
     output:
-    tuple val(accession), path("*.design.csv"), path("*raw.csv"),                   optional: true,                                     emit: raw
-    tuple val(accession), path("*.design.csv"), path("*normalized.csv"),            optional: true,                                     emit: normalized
+    path "*.design.csv",                                                                                                                emit: design
+    path "*.counts.csv",                                                                                                                emit: counts
     tuple val("${task.process}"), val('R'),               eval('Rscript -e "cat(R.version.string)" | sed "s/R version //"'),            topic: versions
     tuple val("${task.process}"), val('ExpressionAtlas'), eval('Rscript -e "cat(as.character(packageVersion(\'ExpressionAtlas\')))"'),  topic: versions
 
-
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     """
@@ -34,7 +57,7 @@ process EXPRESSIONATLAS_GETDATA {
 
     stub:
     """
-    touch acc.raw.csv
+    touch acc.raw.counts.csv
     touch acc.design.csv
     """
 

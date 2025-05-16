@@ -6,7 +6,7 @@ nextflow_process {
     tag "getaccessions"
     tag "module"
 
-    test('["solanum_tuberosum", ["potato"]]') {
+    test("Solanum tuberosum one keyword") {
 
         tag "potato_two_kw"
 
@@ -21,13 +21,15 @@ nextflow_process {
         }
 
         then {
-            assert process.success
-            assert snapshot(process.out).match()
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
         }
 
     }
 
-    test('["solanum_tuberosum", "potato,phloem"]') {
+    test('Solanum tuberosum two keywords') {
 
         tag "potato_two_kw"
 
@@ -42,13 +44,15 @@ nextflow_process {
         }
 
         then {
-            assert process.success
-            assert snapshot(process.out).match()
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
         }
 
     }
 
-    test('["solanum_tuberosum", null]') {
+    test('Solanum tuberosum no keyword') {
 
         tag "potato_no_kw"
 
@@ -63,8 +67,10 @@ nextflow_process {
         }
 
         then {
-            assert process.success
-            assert snapshot(process.out).match()
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
         }
 
     }
