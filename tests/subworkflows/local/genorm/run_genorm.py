@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+#
+# This script is inspired from the rna-genorm python package
+# https://gitlab.com/hylkedonker/genorm
 import sys
 
 import numpy as np
@@ -5,6 +9,20 @@ import pandas as pd
 
 file = sys.argv[1]
 # Expression data for three control genes.
+# read parquet files containing one "gene_id" column, and where:
+# - all other columns are samples
+# - all rows are genes
+# Example:
+# ┌───────────┬───────┬───────┬───────┬───────┬───────┬───────┐
+# │ gene_id   ┆ S1    ┆ S2    ┆ S3    ┆ S4    ┆  S5   ┆ S6    │
+# │ ---       ┆ ---   ┆ ---   ┆ ---   ┆ ---   ┆ ---   ┆ ---   │
+# │ str       ┆ f64   ┆ f64   ┆ f64   ┆ f64   ┆ f64   ┆ f64   │
+# ╞═══════════╪═══════╪═══════╪═══════╪═══════╪═══════╪═══════╡
+# │ gene_A    ┆ 16.57 ┆ 16.64 ┆ 17.75 ┆ 17.61 ┆ 17.59 ┆ 17.26 │
+# │ gene_B    ┆ 18.39 ┆ 18.89 ┆ 19.23 ┆ 18.74 ┆ 18.33 ┆ 18.94 │
+# │ …         ┆ …     ┆ …     ┆ …     ┆ …     ┆ …     ┆ …     │
+# │ gene_C    ┆ 19.26 ┆ 19.65 ┆ 20.15 ┆ 19.64 ┆ 20.05 ┆ 19.95 │
+# └───────────┴───────┴───────┴───────┴───────┴───────┴───────┘
 counts = pd.read_parquet(file)
 counts.set_index("gene_id", inplace=True)
 counts = counts.T.replace(0, 1e-8)
