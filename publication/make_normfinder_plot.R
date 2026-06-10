@@ -11,6 +11,9 @@ ggplot(data, aes(x = gene_id, y = normfinder_stability_value)) +
   geom_bar(stat = "identity", fill = "deeppink4") +
   labs(x = "Gene", y = "NormFinder stability value") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    text=element_text(size=16,  family="Liberation Sans"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 
 ggsave("normfinder_stability_values.png", width = 8, height = 6, dpi = 300) 

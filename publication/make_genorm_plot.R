@@ -11,6 +11,9 @@ ggplot(data, aes(x = gene_id, y = m_measure)) +
   geom_bar(stat = "identity", fill = "darkcyan") +
   labs(x = "Gene", y = "GeNorm M-measure") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    text=element_text(size=16,  family="Liberation Sans"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 
 ggsave("genorm_m_measures.png", width = 8, height = 6, dpi = 300) 
