@@ -6,3 +6,10 @@ les candidats ont été choisis dans la section correspondant à l'expression de
 RPL32 (FBgn0040418): autre nom RP49, très utilisé comme gène de réf, pas dans la gamme de trf2 mais pas grave pour un ctrl neg
 Act5C (): autre gène très couramment utilisé
 GAPDH2 (): autre gène très couramment utilisé
+
+## Annotations
+
+drosophila pseudoobscura: https://s3ftp.flybase.org/genomes/Drosophila_pseudoobscura/dpse_r3.04_FB2018_05/gff/dpse-all-r3.04.gff.gz
+
+medicago truncatula:
+raw data downloaded from MtExpress
