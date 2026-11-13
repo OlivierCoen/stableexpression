@@ -1,6 +1,6 @@
 process GEO_GETACCESSIONS {
 
-    label 'process_high'
+    label 'process_medium_requirements'
 
     tag "${species}"
 

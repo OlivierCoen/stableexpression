@@ -1,6 +1,6 @@
 process EXPRESSIONATLAS_GETACCESSIONS {
 
-    label 'process_high'
+    label 'process_low_requirements'
 
     tag "${species}"
 
