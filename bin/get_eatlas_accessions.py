@@ -5,9 +5,7 @@
 import argparse
 import logging
 import random
-from functools import partial
 import asyncio
-from multiprocessing import Pool
 
 import httpx
 import pandas as pd
@@ -81,13 +79,6 @@ def parse_args() -> argparse.Namespace:
         dest="random_sampling_seed",
         type=int,
         help="Random sampling seed",
-    )
-    parser.add_argument(
-        "--cpus",
-        type=int,
-        dest="nb_cpus",
-        required=True,
-        help="Number of CPUs",
     )
     return parser.parse_args()
 
@@ -510,9 +501,10 @@ def main():
 
     if keywords:
         logger.info(f"Filtering experiments with keywords {keywords}")
-        func = partial(filter_experiment_with_keywords, keywords=keywords)
-        with Pool(processes=args.nb_cpus) as pool:
-            results = [res for res in pool.map(func, results) if res is not None]
+        results = [
+            res for res in (filter_experiment_with_keywords(res, keywords) for res in results)
+            if res is not None
+        ]
         logger.info(
             f"Found {len(results)} experiments corresponding to keywords {keywords}",
         )
