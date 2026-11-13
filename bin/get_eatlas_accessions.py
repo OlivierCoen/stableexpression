@@ -42,11 +42,15 @@ METADATA_KEYS = {
 }
 
 ALL_EXP_URL = "https://www.ebi.ac.uk/gxa/json/experiments/"
+
 ACCESSION_OUTFILE_NAME = "accessions.txt"
-SPECIES_EXPERIMENTS_METADATA_OUTFILE_NAME = "species_experiments.metadata.tsv"
 SELECTED_EXPERIMENTS_METADATA_OUTFILE_NAME = "selected_experiments.metadata.tsv"
+REJECTED_EXPERIMENTS_METADATA_OUTFILE_NAME = "rejected_experiments.metadata.tsv"
 
 SAMPLING_QUOTA_OUTFILE = "sampling_quota.txt"
+
+NO_KEYWORD_FOUND_FAILURE_REASON = "No keyword found"
+REJECTED_FOR_SUBSAMPLING_FAILURE_REASON = "Rejected due to subsampling"
 
 
 # -------------------------------------------------------------------------
@@ -140,7 +144,7 @@ async def get_data(client: httpx.AsyncClient, url: str) -> dict:
     return response.json()
 
 
-async def parse_all_experiments(experiments: list[dict]) -> list[dict]:
+async def parse_details_of_all_experiments(experiments: list[dict]) -> list[dict]:
     """Parse all experiments in parallel using asyncio.
 
     Parameters
@@ -156,7 +160,7 @@ async def parse_all_experiments(experiments: list[dict]) -> list[dict]:
     """
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-        tasks = [parse_experiment(client, exp, semaphore) for exp in experiments]
+        tasks = [parse_experiment_details(client, exp, semaphore) for exp in experiments]
         return await asyncio.gather(*tasks)
 
 
@@ -320,7 +324,7 @@ def get_species_experiments(experiments: list[dict], species: str) -> list[dict]
     return species_experiments
 
 
-async def parse_experiment(client: httpx.AsyncClient, exp_dict: dict, semaphore: asyncio.Semaphore) -> dict:
+async def parse_experiment_details(client: httpx.AsyncClient, exp_dict: dict, semaphore: asyncio.Semaphore) -> dict:
     """Parse an experiment dictionary to extract relevant information.
 
     Parameters
@@ -352,8 +356,8 @@ async def parse_experiment(client: httpx.AsyncClient, exp_dict: dict, semaphore:
     }
 
 
-def filter_experiment_with_keywords(exp_dict: dict, keywords: list[str]) -> dict | None:
-    """Filter an experiment dictionary based on keywords.
+def enrich_with_searched_keywords(exp_dict: dict, keywords: list[str]) -> dict:
+    """Enrich the experiment dictionary with the keywords found in the experiment.
 
     Parameters
     ----------
@@ -370,25 +374,21 @@ def filter_experiment_with_keywords(exp_dict: dict, keywords: list[str]) -> dict
     """
     all_searchable_fields = [exp_dict["description"]] + exp_dict["properties"]
     found_keywords = keywords_in_fields(all_searchable_fields, keywords)
-    # only returning experiments if found keywords
-    if found_keywords:
-        exp_dict["found_keywords"] = list(set(found_keywords))
-        return exp_dict
-    return None
+    exp_dict["found_keywords"] = list(set(found_keywords))
+    if not exp_dict["found_keywords"]:
+        exp_dict["failure_reason"] = NO_KEYWORD_FOUND_FAILURE_REASON
+    return exp_dict
 
 
-def get_metadata_for_selected_experiments(
-    experiments: list[dict],
-    results: list[dict],
-) -> list[dict]:
-    """Get the metadata for the selected experiments.
+def extract_metadata_of_interest(platform_experiments: list[dict], experiment_details: list[dict]) -> list[dict]:
+    """Get the metadata of interest for the list of experiments.
 
     Parameters
     ----------
-    experiments : list[dict]
-        The list of experiments to filter.
-    results : list[dict]
-        The list of results to filter the experiments with.
+    platform_experiments : list[dict]
+        The list of experiments from the platform.
+    experiment_details : list[dict]
+        The list of experiment details.
 
     Returns
     -------
@@ -399,12 +399,14 @@ def get_metadata_for_selected_experiments(
     metadata = []
     accession_to_metadata_of_interest = {
         exp_dict["experimentAccession"]: {renamed_key: exp_dict.get(original_key) for original_key, renamed_key in METADATA_KEYS.items()}
-        for exp_dict in experiments
+        for exp_dict in platform_experiments
     }
-    for result_dict in results:
-        accession = result_dict["accession"]
-        metadata_of_interest = accession_to_metadata_of_interest.get(accession, {})
-        metadata.append({**result_dict, **metadata_of_interest})
+    for exp_dict in experiment_details:
+        accession = exp_dict["accession"]
+        if accession not in accession_to_metadata_of_interest:
+            logger.warning(f"Accession {accession} not found in experiments.")
+            continue
+        metadata.append({**exp_dict, **accession_to_metadata_of_interest[accession]})
     return metadata
 
 
@@ -496,45 +498,43 @@ def main():
     species_name = format_species_name(args.species)
 
     logger.info("Getting all Expression Atlas experiments")
-    experiments = get_eatlas_experiments()
-    logger.info(f"Found {len(experiments)} experiments")
+    all_experiments = get_eatlas_experiments()
+    logger.info(f"Found {len(all_experiments)} experiments")
 
     logger.info("Filtering on species name")
-    experiments = get_species_experiments(experiments, species_name)
-    logger.info(f"Found {len(experiments)} experiments for species {species_name}")
+    species_experiments = get_species_experiments(all_experiments, species_name)
+    logger.info(f"Found {len(species_experiments)} experiments for species {species_name}")
 
     logger.info("Filtering experiments based on platform")
-    experiments = filter_by_platform(experiments, args.platform)
+    platform_experiments = filter_by_platform(species_experiments, args.platform)
 
     logger.info("Fetching and parsing metadata of experiments")
-    results = asyncio.run(parse_all_experiments(experiments))
+    experiment_details = asyncio.run(parse_details_of_all_experiments(platform_experiments))
+
+    experiments = extract_metadata_of_interest(platform_experiments, experiment_details)
+
+    # getting accessions of selected experiments so far
+    selected_accessions = [exp_dict["accession"] for exp_dict in experiments]
 
     if keywords:
         logger.info(f"Filtering experiments with keywords {keywords}")
-        results = [
-            res for res in (filter_experiment_with_keywords(res, keywords) for res in results)
-            if res is not None
-        ]
-        logger.info(
-            f"Found {len(results)} experiments corresponding to keywords {keywords}",
-        )
-
-    # getting accessions of selected experiments
-    selected_accessions = [exp_dict["accession"] for exp_dict in results]
+        experiments = [enrich_with_searched_keywords(exp_dict, keywords) for exp_dict in experiments]
+        selected_accessions = [exp_dict["accession"] for exp_dict in experiments if exp_dict["found_keywords"]]
+        logger.info(f"Found {len(selected_accessions)} experiments corresponding to keywords {keywords}")
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # SAMPLING DATASETS IF NECESSARY
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     sampling_status = "ok"
-    if args.random_sampling_size and args.random_sampling_seed:
+    if args.random_sampling_size is not None and args.random_sampling_seed is not None:
         selected_accession_to_nb_samples = [
             {
-                "accession": exp_dict["experimentAccession"],
-                "nb_samples": exp_dict["numberOfAssays"],
+                "accession": exp_dict["accession"],
+                "nb_samples": exp_dict["mumber_of_samples"],
             }
             for exp_dict in experiments
-            if exp_dict["experimentAccession"] in selected_accessions
+            if exp_dict["accession"] in selected_accessions
         ]
 
         nb_samples_df = pd.DataFrame.from_dict(selected_accession_to_nb_samples)
@@ -546,9 +546,10 @@ def main():
             args.random_sampling_size,
             args.random_sampling_seed,
         )
-        logger.info(
-            f"Kept {len(selected_accessions)} experiments after random sampling",
-        )
+        logger.info(f"Kept {len(selected_accessions)} experiments after random sampling")
+        for exp_dict in experiments:
+            if exp_dict["accession"] not in selected_accessions:
+                exp_dict["failure_reason"] = REJECTED_FOR_SUBSAMPLING_FAILURE_REASON
 
         if sampling_quota_reached:
             sampling_status = "full"
@@ -558,42 +559,41 @@ def main():
     with open(SAMPLING_QUOTA_OUTFILE, "w") as fout:
         fout.write(sampling_status)
 
-    # keeping metadata of interest only for selected experiments
-    selected_experiments = get_metadata_for_selected_experiments(experiments, results)
-
     if not selected_accessions:
-        logger.warning(
-            f"Could not find experiments for species {species_name} and keywords {keywords}",
-        )
+        logger.warning(f"Could not find experiments for species {species_name} and keywords {keywords}")
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # EXPORTING DATA
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    # getting metadata of selected accessions
+    selected_experiments = [exp_dict for exp_dict in experiments if exp_dict["accession"] in selected_accessions]
+    rejected_experiments = [exp_dict for exp_dict in experiments if exp_dict["accession"] not in selected_accessions]
 
     # exporting list of accessions
     logger.info(f"Writing accessions to {ACCESSION_OUTFILE_NAME}")
     with open(ACCESSION_OUTFILE_NAME, "w") as fout:
         fout.writelines([f"{acc}\n" for acc in selected_accessions])
 
-    # exporting metadata
-    logger.info(
-        f"Writing metadata of all experiments for species {species_name} to {SPECIES_EXPERIMENTS_METADATA_OUTFILE_NAME}",
-    )
-    df = pd.DataFrame.from_dict(experiments)
-    df.to_csv(
-        SPECIES_EXPERIMENTS_METADATA_OUTFILE_NAME,
-        sep="\t",
-        index=False,
-        header=True,
-    )
-
     if selected_experiments:
         logger.info(
-            f"Writing metadata of filtered experiments to {SELECTED_EXPERIMENTS_METADATA_OUTFILE_NAME}",
+            f"Writing metadata of selected experiments to {SELECTED_EXPERIMENTS_METADATA_OUTFILE_NAME}",
         )
         df = pd.DataFrame.from_dict(selected_experiments)
         df.to_csv(
             SELECTED_EXPERIMENTS_METADATA_OUTFILE_NAME,
+            sep="\t",
+            index=False,
+            header=True,
+        )
+
+    if rejected_experiments:
+        logger.info(
+            f"Writing metadata of rejected species experiments to {REJECTED_EXPERIMENTS_METADATA_OUTFILE_NAME}",
+        )
+        df = pd.DataFrame.from_dict(rejected_experiments)
+        df.to_csv(
+            REJECTED_EXPERIMENTS_METADATA_OUTFILE_NAME,
             sep="\t",
             index=False,
             header=True,

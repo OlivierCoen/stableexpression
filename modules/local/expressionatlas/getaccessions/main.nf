@@ -16,7 +16,7 @@ process EXPRESSIONATLAS_GETACCESSIONS {
     path "accessions.txt",                    optional: true,                                                   emit: accessions
     env("SAMPLING_QUOTA"),                                                                                      emit: sampling_quota
     path "selected_experiments.metadata.tsv", optional: true,                                                   topic: eatlas_selected_datasets
-    path "species_experiments.metadata.tsv",  optional: true,                                                   topic: eatlas_all_datasets
+    path "rejected_experiments.metadata.tsv",  optional: true,                                                  topic: eatlas_rejected_datasets
     tuple val("${task.process}"), val('python'), eval("python3 --version | sed 's/Python //'"),                 topic: versions
     tuple val("${task.process}"), val('httpx'),  eval('python3 -c "import httpx; print(httpx.__version__)"'),   topic: versions
     tuple val("${task.process}"), val('nltk'),   eval('python3 -c "import nltk; print(nltk.__version__)"'),     topic: versions
@@ -44,6 +44,6 @@ process EXPRESSIONATLAS_GETACCESSIONS {
     echo "E-stub" > accessions.txt
     SAMPLING_QUOTA=ok
     touch selected_experiments.metadata.tsv
-    touch species_experiments.metadata.tsv
+    touch rejected_experiments.metadata.tsv
     """
 }
