@@ -617,7 +617,7 @@ def check_source_issues(library_sources: list) -> str | None:
     return f"LIBRARY SOURCES: {library_sources}"
 
 
-def search_keywords(dataset: dict, keywords: list[str]) -> tuple[list, str | None]:
+def search_keywords(dataset: dict, keywords: list[str]) -> tuple[dict, str | None]:
     """Search for keywords in the dataset.
 
     Return a tuple with the found keywords and an error message if no keywords were found.
@@ -632,10 +632,9 @@ def search_keywords(dataset: dict, keywords: list[str]) -> tuple[list, str | Non
     found_keywords = keywords_in_fields(all_searchable_fields, keywords)
     # only returning experiments if found keywords
     if found_keywords:
-        dataset["found_keywords"] = list(set(found_keywords))
         logger.info(f"Found keywords: {found_keywords} in accession {accession}")
         return found_keywords, None
-    return [], "NO KEYWORDS_FOUND"
+    return {}, "NO KEYWORDS_FOUND"
 
 
 def check_dataset(
@@ -643,7 +642,7 @@ def check_dataset(
     species: str,
     platform: str | None,
     keywords: list[str] | None,
-) -> tuple[list, dict]:
+) -> tuple[dict, dict]:
     """Check if a dataset is valid for the given species, platform and keywords."""
     accession = dataset["accession"]
     parsed_species_list = dataset["taxon"].split("; ")
@@ -669,7 +668,7 @@ def check_dataset(
     if issue := check_molecule_type_issues(molecules_types):
         issues.append(issue)
 
-    found_keywords = []
+    found_keywords = {}
     if keywords:
         found_keywords, keyword_issue = search_keywords(dataset, keywords)
         if keyword_issue:

@@ -39,6 +39,9 @@ process GEO_GETACCESSIONS {
     # the folder where nltk will download data needs to be writable (necessary for singularity)
     export NLTK_DATA=\${PWD}
 
+    # the folder where to download the mesh XML file
+    export MESH_FOLDER=\${PWD}/mesh
+
     get_geo_dataset_accessions.py \\
         --species $species \\
         --cpus ${task.cpus} \\

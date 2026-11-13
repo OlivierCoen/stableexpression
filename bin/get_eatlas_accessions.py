@@ -9,7 +9,6 @@ import asyncio
 
 import httpx
 import pandas as pd
-import yaml
 from natural_language_utils import keywords_in_fields
 from tenacity import (
     before_sleep_log,
@@ -373,8 +372,7 @@ def enrich_with_searched_keywords(exp_dict: dict, keywords: list[str]) -> dict:
 
     """
     all_searchable_fields = [exp_dict["description"]] + exp_dict["properties"]
-    found_keywords = keywords_in_fields(all_searchable_fields, keywords)
-    exp_dict["found_keywords"] = list(set(found_keywords))
+    exp_dict["found_keywords"] = keywords_in_fields(all_searchable_fields, keywords)
     if not exp_dict["found_keywords"]:
         exp_dict["failure_reason"] = NO_KEYWORD_FOUND_FAILURE_REASON
     return exp_dict
@@ -486,7 +484,6 @@ def main():
 
     keywords = [keyword.strip() for keyword in args.keywords.split(",")]
 
-    results = None
     selected_accessions = []
     selected_experiments = []
 
@@ -548,7 +545,7 @@ def main():
         )
         logger.info(f"Kept {len(selected_accessions)} experiments after random sampling")
         for exp_dict in experiments:
-            if exp_dict["accession"] not in selected_accessions:
+            if "failure_reason" not in exp_dict and exp_dict["accession"] not in selected_accessions:
                 exp_dict["failure_reason"] = REJECTED_FOR_SUBSAMPLING_FAILURE_REASON
 
         if sampling_quota_reached:
