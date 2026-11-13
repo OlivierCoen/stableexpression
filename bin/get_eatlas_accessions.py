@@ -6,6 +6,7 @@ import argparse
 import logging
 import random
 from functools import partial
+import asyncio
 from multiprocessing import Pool
 
 import httpx
@@ -23,6 +24,16 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
+# ----------------------------------------
+# HTTPX
+# ----------------------------------------
+
+MAX_CONCURRENT_REQUESTS = 20
+STOP_AFTER_DELAY = 60 * 30
+TIMEOUT = 60 * 10 # timeout of 10 minutes since the EBI may take a while to respond
+
+# ----------------------------------------
+
 ALLOWED_PLATFORMS = ["rnaseq", "microarray"]
 
 ALL_EXP_URL = "https://www.ebi.ac.uk/gxa/json/experiments/"
@@ -34,12 +45,9 @@ FILTERED_EXPERIMENTS_WITH_KEYWORDS_OUTFILE_NAME = "filtered_experiments.keywords
 SAMPLING_QUOTA_OUTFILE = "sampling_quota.txt"
 
 
-##################################################################
-##################################################################
+# -------------------------------------------------------------------------
 # FUNCTIONS
-##################################################################
-##################################################################
-
+# -------------------------------------------------------------------------
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
@@ -85,15 +93,37 @@ def parse_args() -> argparse.Namespace:
 
 
 @retry(
-    stop=stop_after_delay(600),
+    stop=stop_after_delay(STOP_AFTER_DELAY),
     wait=wait_exponential(multiplier=1, min=1, max=30),
     before_sleep=before_sleep_log(logger, logging.WARNING),
 )
-def get_data(url: str) -> dict:
+def get_eatlas_experiments() -> list[dict]:
+    """Get all experiments from Expression Atlas.
+
+    Returns
+    -------
+    experiments : list
+        A list of experiment dictionaries
+
+    """
+    with httpx.Client(timeout=TIMEOUT) as client:
+        response = client.get(ALL_EXP_URL)
+        response.raise_for_status()
+        return response.json()["experiments"]
+
+
+@retry(
+    stop=stop_after_delay(STOP_AFTER_DELAY),
+    wait=wait_exponential(multiplier=1, min=1, max=30),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+)
+async def get_data(client: httpx.AsyncClient, url: str) -> dict:
     """Query a URL and returns the data as a JSON object.
 
     Parameters
     ----------
+    client : httpx.AsyncClient
+        The HTTP client to use
     url : str
         The URL to query
 
@@ -108,10 +138,29 @@ def get_data(url: str) -> dict:
         If the query fails
 
     """
-    # timeout of 10 minutes since the EBI may take a while to respond
-    response = httpx.get(url, timeout=360.0)
+    response = await client.get(url)
     response.raise_for_status()
     return response.json()
+
+
+async def parse_all_experiments(experiments: list[dict]) -> list[dict]:
+    """Parse all experiments in parallel using asyncio.
+
+    Parameters
+    ----------
+    experiments : list[dict]
+        A list of experiment dictionaries.
+
+    Returns
+    -------
+    list[dict]
+        A list of parsed experiment dictionaries.
+
+    """
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+    async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+        tasks = [parse_experiment(client, exp, semaphore) for exp in experiments]
+        return await asyncio.gather(*tasks)
 
 
 def get_experiment_description(exp_dict: dict) -> str:
@@ -201,19 +250,6 @@ def get_properties_values(exp_dict: dict) -> list:
     return list(set(values))
 
 
-def get_eatlas_experiments() -> list[dict]:
-    """Get all experiments from Expression Atlas.
-
-    Returns
-    -------
-    experiments : list
-        A list of experiment dictionaries
-
-    """
-    data = get_data(ALL_EXP_URL)
-    return data["experiments"]
-
-
 def filter_by_platform(experiments: list[dict], platform: str | None) -> list[dict]:
     """Get all experiments for a given platform from Expression Atlas.
 
@@ -287,31 +323,17 @@ def get_species_experiments(experiments: list[dict], species: str) -> list[dict]
     return species_experiments
 
 
-def get_experiment_data(exp_dict: dict) -> dict:
-    """Get the full data for an experiment given its dictionary.
-
-    Parameters
-    ----------
-    exp_dict : dict
-        The experiment dictionary
-
-    Returns
-    -------
-    exp_data : dict
-        The full experiment data
-
-    """
-    exp_url = ALL_EXP_URL + exp_dict["experimentAccession"]
-    return get_data(exp_url)
-
-
-def parse_experiment(exp_dict: dict) -> dict:
+async def parse_experiment(client: httpx.AsyncClient, exp_dict: dict, semaphore: asyncio.Semaphore) -> dict:
     """Parse an experiment dictionary to extract relevant information.
 
     Parameters
     ----------
+    client : httpx.AsyncClient
+        The HTTP client to use for making requests.
     exp_dict : dict
-        The experiment dictionary to parse
+        The experiment dictionary to parse.
+    semaphore : asyncio.Semaphore
+        The semaphore to use for limiting the number of concurrent requests.
 
     Returns
     -------
@@ -322,14 +344,14 @@ def parse_experiment(exp_dict: dict) -> dict:
     # getting accession and description
     accession = get_experiment_accession(exp_dict)
     description = get_experiment_description(exp_dict)
-    # getting properties of this experiment
-    exp_data = get_experiment_data(exp_dict)
-    properties_values = get_properties_values(exp_data)
+    # getting experiment metadata
+    async with semaphore:
+        exp_data = await get_data(client, ALL_EXP_URL + exp_dict["experimentAccession"])
 
     return {
         "accession": accession,
         "description": description,
-        "properties": properties_values,
+        "properties": get_properties_values(exp_data),
     }
 
 
@@ -451,11 +473,9 @@ def format_species_name(species: str) -> str:
     return species.replace("_", " ").capitalize().strip()
 
 
-##################################################################
-##################################################################
+# -------------------------------------------------------------------------
 # MAIN
-##################################################################
-##################################################################
+# -------------------------------------------------------------------------
 
 
 def main():
@@ -476,6 +496,7 @@ def main():
 
     logger.info("Getting all Expression Atlas experiments")
     experiments = get_eatlas_experiments()
+    logger.info(f"Found {len(experiments)} experiments")
 
     logger.info("Filtering on species name")
     experiments = get_species_experiments(experiments, species_name)
@@ -484,9 +505,8 @@ def main():
     logger.info("Filtering experiments based on platform")
     experiments = filter_by_platform(experiments, args.platform)
 
-    logger.info("Parsing experiments")
-    with Pool(processes=args.nb_cpus) as pool:
-        results = pool.map(parse_experiment, experiments)
+    logger.info("Fetching and parsing metadata of experiments")
+    results = asyncio.run(parse_all_experiments(experiments))
 
     if keywords:
         logger.info(f"Filtering experiments with keywords {keywords}")
