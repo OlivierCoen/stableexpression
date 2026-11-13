@@ -33,12 +33,18 @@ TIMEOUT = 60 * 10 # timeout of 10 minutes since the EBI may take a while to resp
 # ----------------------------------------
 
 ALLOWED_PLATFORMS = ["rnaseq", "microarray"]
+METADATA_KEYS = {
+    "technologyType": "technology",
+    "numberOfAssays": "mumber_of_samples",
+    "experimentalFactors": "experimental_factors",
+    "experimentType": "experiment_type",
+    "numberOfContrasts": "number_of_contrasts",
+}
 
 ALL_EXP_URL = "https://www.ebi.ac.uk/gxa/json/experiments/"
 ACCESSION_OUTFILE_NAME = "accessions.txt"
 SPECIES_EXPERIMENTS_METADATA_OUTFILE_NAME = "species_experiments.metadata.tsv"
 SELECTED_EXPERIMENTS_METADATA_OUTFILE_NAME = "selected_experiments.metadata.tsv"
-FILTERED_EXPERIMENTS_WITH_KEYWORDS_OUTFILE_NAME = "filtered_experiments.keywords.yaml"
 
 SAMPLING_QUOTA_OUTFILE = "sampling_quota.txt"
 
@@ -390,12 +396,16 @@ def get_metadata_for_selected_experiments(
         The filtered list of experiments.
 
     """
-    filtered_accessions = [result_dict["accession"] for result_dict in results]
-    return [
-        exp_dict
+    metadata = []
+    accession_to_metadata_of_interest = {
+        exp_dict["experimentAccession"]: {renamed_key: exp_dict.get(original_key) for original_key, renamed_key in METADATA_KEYS.items()}
         for exp_dict in experiments
-        if get_experiment_accession(exp_dict) in filtered_accessions
-    ]
+    }
+    for result_dict in results:
+        accession = result_dict["accession"]
+        metadata_of_interest = accession_to_metadata_of_interest.get(accession, {})
+        metadata.append({**result_dict, **metadata_of_interest})
+    return metadata
 
 
 def sample_experiments_randomly(
@@ -512,6 +522,10 @@ def main():
     # getting accessions of selected experiments
     selected_accessions = [exp_dict["accession"] for exp_dict in results]
 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # SAMPLING DATASETS IF NECESSARY
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     sampling_status = "ok"
     if args.random_sampling_size and args.random_sampling_seed:
         selected_accession_to_nb_samples = [
@@ -544,7 +558,7 @@ def main():
     with open(SAMPLING_QUOTA_OUTFILE, "w") as fout:
         fout.write(sampling_status)
 
-    # keeping metadata only for selected experiments
+    # keeping metadata of interest only for selected experiments
     selected_experiments = get_metadata_for_selected_experiments(experiments, results)
 
     if not selected_accessions:
@@ -584,14 +598,6 @@ def main():
             index=False,
             header=True,
         )
-
-    if results:
-        # exporting list of selected experiments with their keywords
-        logger.info(
-            f"Writing filtered experiments with keywords to {FILTERED_EXPERIMENTS_WITH_KEYWORDS_OUTFILE_NAME}",
-        )
-        with open(FILTERED_EXPERIMENTS_WITH_KEYWORDS_OUTFILE_NAME, "w") as fout:
-            yaml.dump(results, fout)
 
 
 if __name__ == "__main__":
