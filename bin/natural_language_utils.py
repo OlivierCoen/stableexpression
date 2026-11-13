@@ -1,5 +1,6 @@
 import nltk
 from nltk.corpus import wordnet
+from functools import lru_cache
 
 nltk.download("punkt_tab")
 nltk.download("averaged_perceptron_tagger_eng")
@@ -21,6 +22,7 @@ def get_wordnet_pos(token: str) -> str:
     return tag_dict.get(tag, wordnet.NOUN)  # Default to NOUN if not found
 
 
+@lru_cache
 def get_stemmed_tokens(sentence: str) -> list[str]:
     """Tokenize a sentence into its constituent words, and then stem each word.
 
@@ -39,6 +41,7 @@ def get_stemmed_tokens(sentence: str) -> list[str]:
     return [stemmer.stem(token) for token in tokens]
 
 
+@lru_cache
 def get_lemmed_tokens(sentence: str) -> list[str]:
     """Tokenize a sentence into its constituent words, and then lemmatize each word.
 
@@ -57,6 +60,7 @@ def get_lemmed_tokens(sentence: str) -> list[str]:
     return [lemmatizer.lemmatize(token, get_wordnet_pos(token)) for token in tokens]
 
 
+@lru_cache
 def get_synonyms(word: str) -> set[str]:
     """Get all synonyms of a word from the wordnet database.
 
@@ -78,6 +82,7 @@ def get_synonyms(word: str) -> set[str]:
     return set(synonyms)  # Return as a set to avoid duplicates
 
 
+@lru_cache
 def get_all_candidate_target_words(sentence: str) -> list[str]:
     """Get all candidate target words from a sentence by stemming and lemmatizing the tokens and getting synonyms from the wordnet database.
 
@@ -93,39 +98,12 @@ def get_all_candidate_target_words(sentence: str) -> list[str]:
 
     """
     candidates = []
-    lemmatized_tokens = get_stemmed_tokens(sentence)
+    lemmatized_tokens = get_lemmed_tokens(sentence)
     stemmed_tokens = get_stemmed_tokens(sentence)
     tokens = list(set(lemmatized_tokens + stemmed_tokens))
     for token in tokens:
         candidates += get_synonyms(token)
     return candidates
-
-
-def word_is_in_sentence(word: str, sentence: str) -> bool:
-    """Check if a word (or a stemmed version of it) is in a sentence, or if it is a subword of a stemmed version of any word in the sentence.
-
-    Parameters
-    ----------
-    word : str
-        The word to be searched for
-    sentence : str
-        The sentence in which to search for the word
-
-    Returns
-    -------
-    bool
-        True if the word is found in the sentence, False otherwise
-
-    """
-    for stemmed_word in [word, *get_stemmed_tokens(word)]:
-        # testing if stemmed word is in sentence as it is
-        if stemmed_word in sentence:
-            return True
-        # or testing if stemmed word is a subword of a stemmed word from the sentence
-        for target_word in get_all_candidate_target_words(sentence):
-            if stemmed_word in target_word:
-                return True
-    return False
 
 
 def keywords_in_fields(fields: list[str], keywords: list[str]) -> list[str]:
@@ -144,6 +122,11 @@ def keywords_in_fields(fields: list[str], keywords: list[str]) -> list[str]:
         A list of all keywords that are found in any of the fields
 
     """
-    return [
-        keyword for keyword in keywords for field in fields if word_is_in_sentence(keyword, field)
-    ]
+    matched = set()
+    keyword_stems = {kw: frozenset([kw, *get_stemmed_tokens(kw)]) for kw in keywords}
+    for field in fields:
+        candidates = get_all_candidate_target_words(field)  # cached, so once per distinct field
+        for kw, stems in keyword_stems.items():
+            if any(s in field or any(s in c for c in candidates) for s in stems):
+                matched.add(kw)
+    return list(matched)
